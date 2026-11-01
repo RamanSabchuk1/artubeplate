@@ -1,0 +1,10 @@
+packages:
+  - 'packages/*'
+  # Dev-only math generator for the showcase slot (pure TS). NOT shipped in the scaffold —
+  # it writes the Artube upload set (index.json + lookUpTable_*.csv.zst + books_*.jsonl.zst)
+  # into the template's math/ folder.
+  - 'math'
+  # The single showcase game — exactly what `npm create artubeplate` scaffolds. It's a
+  # workspace member so it dev-links the local @artubeplate/core; the scaffolder rewrites
+  # its `workspace:*` dep to the published version on copy.
+  - 'packages/create-artubeplate/template'

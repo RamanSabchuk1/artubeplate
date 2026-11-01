@@ -1,0 +1,182 @@
+{
+  "name": "@artubeplate/core",
+  "version": "1.1.0",
+  "description": "Batteries-included Artube RGS game core — SignalR transport, an artifact-backed mock RGS, round FSM, the open-slot-ui HUD, free rounds, reconnects, errors and math tooling. Bring a scene, a Present phase and a pure interpretBook; the core does the rest.",
+  "keywords": [
+    "artube",
+    "rgs",
+    "slot",
+    "slots",
+    "igaming",
+    "signalr",
+    "open-slot-ui",
+    "typescript",
+    "pixijs",
+    "gsap",
+    "scenes",
+    "transitions"
+  ],
+  "license": "MIT",
+  "author": "Dmitry Vasiliev",
+  "homepage": "https://github.com/lowres-labs/artubeplate#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lowres-labs/artubeplate.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/lowres-labs/artubeplate/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "artubeplate": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./rgs": {
+      "types": "./dist/rgs.d.ts",
+      "import": "./dist/rgs.js",
+      "default": "./dist/rgs.js"
+    },
+    "./math": {
+      "types": "./dist/math.d.ts",
+      "import": "./dist/math.js",
+      "default": "./dist/math.js"
+    },
+    "./audio": {
+      "types": "./dist/audio.d.ts",
+      "import": "./dist/audio.js",
+      "default": "./dist/audio.js"
+    },
+    "./rules": {
+      "types": "./dist/rules.d.ts",
+      "import": "./dist/rules.js",
+      "default": "./dist/rules.js"
+    },
+    "./scenes": {
+      "types": "./dist/scenes.d.ts",
+      "import": "./dist/scenes.js",
+      "default": "./dist/scenes.js"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "import": "./dist/ui.js",
+      "default": "./dist/ui.js"
+    },
+    "./fx": {
+      "types": "./dist/fx.d.ts",
+      "import": "./dist/fx.js",
+      "default": "./dist/fx.js"
+    },
+    "./motion": {
+      "types": "./dist/motion.d.ts",
+      "import": "./dist/motion.js",
+      "default": "./dist/motion.js"
+    },
+    "./assets": {
+      "types": "./dist/assets.d.ts",
+      "import": "./dist/assets.js",
+      "default": "./dist/assets.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js",
+      "default": "./dist/testing.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "import": "./dist/vite.js",
+      "default": "./dist/vite.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "default": "./dist/node.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.15"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run typecheck && npm test"
+  },
+  "peerDependencies": {
+    "@artube/loader": ">=2.1.0",
+    "@assetpack/core": ">=1.7.0",
+    "@open-slot-ui/core": ">=0.18.4",
+    "@open-slot-ui/dom": ">=0.18.9",
+    "@pylinka/core": ">=2.1.0",
+    "@pylinka/graph": ">=2.0.0",
+    "@schmooky/zvuk": ">=1.14",
+    "gsap": ">=3.12",
+    "pixi.js": ">=8.6",
+    "vite": ">=6"
+  },
+  "peerDependenciesMeta": {
+    "@artube/loader": {
+      "optional": true
+    },
+    "@assetpack/core": {
+      "optional": true
+    },
+    "@pylinka/core": {
+      "optional": true
+    },
+    "@pylinka/graph": {
+      "optional": true
+    },
+    "@schmooky/zvuk": {
+      "optional": true
+    },
+    "gsap": {
+      "optional": true
+    },
+    "pixi.js": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@microsoft/signalr": "^10.0.11",
+    "fzstd": "^0.1.1"
+  },
+  "devDependencies": {
+    "@artube/loader": "^2.1.1",
+    "@assetpack/core": "^1.7.0",
+    "@open-slot-ui/core": "^0.18.4",
+    "@open-slot-ui/dom": "^0.18.9",
+    "@pylinka/core": "^2.1.0",
+    "@pylinka/graph": "^2.0.0",
+    "@schmooky/zvuk": "^1.14.1",
+    "@types/node": "^24.0.0",
+    "gsap": "^3.15.0",
+    "jsdom": "^26.1.0",
+    "pixi.js": "^8.21.0",
+    "tsdown": "^0.23.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}

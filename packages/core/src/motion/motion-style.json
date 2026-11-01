@@ -1,0 +1,366 @@
+{
+  "name": "Lowres Labs studio motion",
+  "version": "1.0.0",
+  "summary": "Our pieces are stickers: light and springy. They pop, hold the pose for a beat, and settle with a bounce. Wow, wait, decrease.",
+  "fps": 60,
+  "frames": {
+    "tick": 5,
+    "quick": 8,
+    "snappy": 13,
+    "base": 21,
+    "settle": 34,
+    "slow": 55,
+    "beat": 89
+  },
+  "framesUse": {
+    "tick": "contacts: an anticipation, a squash, a press",
+    "quick": "the wow, flashes, the S and M holds, a flip",
+    "snappy": "exits, fades, falls, the M hold",
+    "base": "entrances, moves, the L hold",
+    "settle": "decreases and wobbles after a hit",
+    "slow": "counts, flights, swells, the L decrease",
+    "beat": "the pause between beats of a sequence"
+  },
+  "eases": {
+    "out": { "gsap": "power2.out", "bezier": [0.333, 1, 0.667, 1], "ae": { "outInfluence": 33.3, "outSpeed": 3, "inInfluence": 33.3, "inSpeed": 0 },
+      "use": "moves into place, the wow, counts" },
+    "in": { "gsap": "power2.in", "bezier": [0.333, 0, 0.667, 0], "ae": { "outInfluence": 33.3, "outSpeed": 0, "inInfluence": 33.3, "inSpeed": 3 },
+      "use": "falls, exits, the approach to an impact" },
+    "glide": { "gsap": "sine.inOut", "bezier": [0.364, 0, 0.636, 1], "ae": { "outInfluence": 36.4, "outSpeed": 0, "inInfluence": 36.4, "inSpeed": 0 },
+      "use": "holds, loops, idle drift, scene transitions" },
+    "pop": { "gsap": "back.out(1.8)", "bezier": [0.333, 1.6, 0.667, 1], "ae": { "outInfluence": 33.3, "outSpeed": 4.8, "inInfluence": 33.3, "inSpeed": 0 },
+      "overshoot": [0.571, 1.11],
+      "use": "arrivals with one overshoot, small decreases" },
+    "wobble": { "gsap": "elastic.out(1, 0.4)", "bezier": null,
+      "keys": [[0, 0], [0.173, 1.275], [0.373, 0.931], [0.574, 1.017], [0.773, 0.996], [1, 1]],
+      "use": "the decrease after a wow, a landing, a slam" },
+    "linear": { "gsap": "none", "bezier": [0, 0, 1, 1], "ae": { "outInfluence": 0, "outSpeed": 1, "inInfluence": 0, "inSpeed": 1 },
+      "use": "spins, scrolling reels, the middle of a long count" }
+  },
+  "easeNotes": {
+    "bezier": "cubic-bezier(x1, y1, x2, y2) for CSS, Figma, Rive, Lottie and Spine. out, in and pop are exact; glide is within 0.03%.",
+    "ae": "After Effects keyframe velocity: influence in %, speed as a multiple of the average speed between the two keys.",
+    "keys": "No bezier can wobble. Key it: [time, value] as fractions of the step, each key eased in and out."
+  },
+  "holds": { "S": "quick", "M": "snappy", "L": "base" },
+  "stagger": {
+    "burst": 2,
+    "group": 3,
+    "line": 4,
+    "reel": 6
+  },
+  "staggerUse": {
+    "burst": "coins or values leaving one place",
+    "group": "items of a group arriving",
+    "line": "cells of a winning line",
+    "reel": "reels starting"
+  },
+  "units": {
+    "scale": "multiplier of the rest scale; sx and sy multiply it",
+    "x": "widths of the piece, from its rest position",
+    "y": "heights of the piece, from its rest position, down is positive",
+    "angle": "degrees, clockwise",
+    "rx": "degrees around the horizontal axis (a cube turning)",
+    "alpha": "0 to 1",
+    "flash": "0 to 1, the white flash layer over the art",
+    "pivot": "where the move layer turns, as fractions of the size from the centre: [0.5, 0.5] is the bottom-right corner",
+    "path": "fly: spread, lift and bend of the arc, in sizes of the flying piece"
+  },
+  "rig": {
+    "root": "Owned by layout: the SmartContainer pin. Never animated.",
+    "move": "x, y, angle, alpha, rx. Turns around its centre, or around a corner for a roll.",
+    "body": "scale, sx, sy. Scales from its centre, or from its feet when the primitive squashes.",
+    "art": "The sprite, centred. An optional white flash layer sits above it. Never animated."
+  },
+  "turbo": "Steps marked scaled take frames x speed (1, 0.4 or 0.12). Every other step keeps its frames.",
+  "primitives": {
+    "appear": {
+      "family": "enter",
+      "use": "Utility entrances: panels, cards, prompts, the win box.",
+      "avoid": "Hero moments: use popIn, land or slam.",
+      "body": "center",
+      "from": { "scale": 0.6, "alpha": 0 },
+      "steps": [
+        { "phase": "in", "frames": "base", "ease": "pop", "to": { "scale": 1 }, "scaled": true,
+          "with": [{ "frames": "quick", "ease": "out", "to": { "alpha": 1 } }] }
+      ]
+    },
+    "popIn": {
+      "family": "enter",
+      "use": "The signature entrance: a coin or symbol arriving, a value appearing, a title card.",
+      "avoid": "Panels and other utility UI: use appear.",
+      "body": "center",
+      "from": { "scale": 0, "alpha": 1 },
+      "steps": [
+        { "phase": "wow", "frames": "quick", "ease": "out", "to": { "scale": 1.15 } },
+        { "phase": "wait", "frames": "snappy", "ease": "glide", "to": { "scale": 1.17 }, "scaled": true },
+        { "phase": "decrease", "frames": "settle", "ease": "wobble", "to": { "scale": 1 } }
+      ]
+    },
+    "land": {
+      "family": "enter",
+      "use": "A piece dropping into place: a coin onto the reels, a token onto a meter.",
+      "avoid": "Pieces that do not sit on anything.",
+      "body": "bottom",
+      "from": { "y": -1.6, "sx": 0.9, "sy": 1.12, "alpha": 1 },
+      "steps": [
+        { "phase": "fall", "frames": "snappy", "ease": "in", "to": { "y": 0 }, "scaled": true },
+        { "phase": "impact", "frames": "tick", "ease": "out", "to": { "sx": 1.2, "sy": 0.8 }, "call": "impact" },
+        { "phase": "rebound", "frames": "tick", "ease": "out", "to": { "sx": 0.94, "sy": 1.08 } },
+        { "phase": "decrease", "frames": "settle", "ease": "wobble", "to": { "sx": 1, "sy": 1 } }
+      ]
+    },
+    "slam": {
+      "family": "enter",
+      "use": "Something big hits the screen: a tier title, FEATURE!, a jackpot word.",
+      "avoid": "More than one at a time, or anything smaller than a title.",
+      "body": "center",
+      "from": { "scale": 2.2, "alpha": 0, "angle": -8 },
+      "steps": [
+        { "phase": "hit", "frames": "quick", "ease": "in", "to": { "scale": 1 },
+          "with": [{ "frames": "tick", "ease": "out", "to": { "alpha": 1 } }] },
+        { "phase": "impact", "frames": "tick", "ease": "out", "to": { "scale": 0.92 }, "call": "impact" },
+        { "phase": "decrease", "frames": "settle", "ease": "wobble", "to": { "scale": 1, "angle": 0 } }
+      ]
+    },
+    "exit": {
+      "family": "exit",
+      "use": "Anything leaving: the win box, a banner, a card.",
+      "avoid": "Pieces that leave by moving somewhere: fly them.",
+      "body": "center",
+      "steps": [
+        { "phase": "gasp", "frames": "tick", "ease": "out", "to": { "scale": 1.06 } },
+        { "phase": "out", "frames": "snappy", "ease": "in", "to": { "scale": 0.5, "alpha": 0 }, "scaled": true }
+      ]
+    },
+    "wow": {
+      "family": "emphasis",
+      "use": "Something good just happened to this piece. S: a counter, a small value, a button. M: a symbol, a coin, a printed value. L: a title, word art, the hero of a screen.",
+      "avoid": "Two at once on one screen, unless they are one group doing it together.",
+      "body": "center",
+      "default": "M",
+      "variants": {
+        "S": [
+          { "phase": "wow", "frames": "quick", "ease": "out", "to": { "scale": 1.08 } },
+          { "phase": "wait", "frames": "quick", "ease": "glide", "to": { "scale": 1.09 }, "scaled": true },
+          { "phase": "decrease", "frames": "base", "ease": "pop", "to": { "scale": 1 } }
+        ],
+        "M": [
+          { "phase": "anticipate", "frames": "tick", "ease": "glide", "to": { "scale": 0.95 } },
+          { "phase": "wow", "frames": "quick", "ease": "out", "to": { "scale": 1.15 }, "call": "pop" },
+          { "phase": "wait", "frames": "snappy", "ease": "glide", "to": { "scale": 1.165 }, "scaled": true },
+          { "phase": "decrease", "frames": "settle", "ease": "wobble", "to": { "scale": 1 } }
+        ],
+        "L": [
+          { "phase": "anticipate", "frames": "quick", "ease": "glide", "to": { "scale": 0.9, "angle": -3 } },
+          { "phase": "wow", "frames": "snappy", "ease": "out", "to": { "scale": 1.25, "angle": 4 }, "call": "pop" },
+          { "phase": "wait", "frames": "base", "ease": "glide", "to": { "scale": 1.27, "angle": 4.5 }, "scaled": true },
+          { "phase": "decrease", "frames": "slow", "ease": "wobble", "to": { "scale": 1, "angle": 0 } }
+        ]
+      }
+    },
+    "pulse": {
+      "family": "idle",
+      "use": "Waiting for the player: PRESS TO CONTINUE, a feature that can be bought.",
+      "avoid": "Anything that is not waiting for input.",
+      "body": "center",
+      "loop": true,
+      "steps": [
+        { "phase": "swell", "frames": "slow", "ease": "glide", "to": { "scale": 1.05 } },
+        { "phase": "ease back", "frames": "slow", "ease": "glide", "to": { "scale": 1 } }
+      ]
+    },
+    "float": {
+      "family": "idle",
+      "use": "Pieces at rest that carry the scene: the logo, the hero of an intro card.",
+      "avoid": "Anything the player reads or taps, and anything on the reels.",
+      "loop": true,
+      "oscillate": [
+        { "prop": "y", "amount": 0.04, "frames": 144 },
+        { "prop": "angle", "amount": 1.5, "frames": 233 }
+      ]
+    },
+    "tease": {
+      "family": "emphasis",
+      "use": "A piece that could trigger something: one scatter away.",
+      "avoid": "Pieces that cannot change the outcome.",
+      "body": "center",
+      "loop": true,
+      "steps": [
+        { "phase": "lean", "frames": 3, "ease": "glide", "to": { "angle": -4, "scale": 1.04 } },
+        { "phase": "rattle", "frames": 3, "ease": "glide", "to": { "angle": 4 } },
+        { "phase": "rattle", "frames": 3, "ease": "glide", "to": { "angle": -3 } },
+        { "phase": "rattle", "frames": 3, "ease": "glide", "to": { "angle": 3 } },
+        { "phase": "rattle", "frames": 3, "ease": "glide", "to": { "angle": -1.5 } },
+        { "phase": "settle", "frames": "base", "ease": "pop", "to": { "angle": 0, "scale": 1 } },
+        { "phase": "rest", "frames": "snappy", "ease": "glide", "to": {} }
+      ]
+    },
+    "shake": {
+      "family": "emphasis",
+      "use": "No: a locked button, a bet that is too high, a pick that is not allowed.",
+      "avoid": "Wins and anything positive.",
+      "steps": [
+        { "phase": "shake", "frames": 3, "ease": "glide", "to": { "x": 0.08 } },
+        { "phase": "shake", "frames": 3, "ease": "glide", "to": { "x": -0.07 } },
+        { "phase": "shake", "frames": 3, "ease": "glide", "to": { "x": 0.05 } },
+        { "phase": "shake", "frames": 3, "ease": "glide", "to": { "x": -0.03 } },
+        { "phase": "shake", "frames": 3, "ease": "glide", "to": { "x": 0.01 } },
+        { "phase": "rest", "frames": 3, "ease": "glide", "to": { "x": 0 } }
+      ]
+    },
+    "hop": {
+      "family": "physics",
+      "use": "A piece celebrating on the spot: a sticker without a frame, a collector, a pick.",
+      "avoid": "Framed symbols: their frame stays still, use wow on the icon.",
+      "body": "bottom",
+      "steps": [
+        { "phase": "anticipate", "frames": "tick", "ease": "out", "to": { "sx": 1.12, "sy": 0.86 } },
+        { "phase": "launch", "frames": "snappy", "ease": "out", "to": { "y": -0.55, "sx": 0.92, "sy": 1.1 }, "scaled": true },
+        { "phase": "wait", "frames": "quick", "ease": "glide", "to": { "y": -0.6, "sx": 1, "sy": 1 }, "scaled": true },
+        { "phase": "fall", "frames": "snappy", "ease": "in", "to": { "y": 0, "sx": 0.94, "sy": 1.08 }, "scaled": true },
+        { "phase": "impact", "frames": "tick", "ease": "out", "to": { "sx": 1.16, "sy": 0.84 }, "call": "impact" },
+        { "phase": "decrease", "frames": "settle", "ease": "wobble", "to": { "sx": 1, "sy": 1 } }
+      ]
+    },
+    "roll": {
+      "family": "physics",
+      "use": "A cube or a tile moving one cell: it tips over its edge, balances, and falls flat.",
+      "avoid": "Art that is not the same after a quarter turn: it would jump when the turn resets.",
+      "body": "bottom",
+      "mirror": true,
+      "advance": true,
+      "steps": [
+        { "phase": "hinge", "set": { "pivot": [0.5, 0.5] } },
+        { "phase": "anticipate", "frames": "tick", "ease": "out", "to": { "sx": 1.04, "sy": 0.94 } },
+        { "phase": "tip", "frames": "snappy", "ease": "out", "to": { "angle": 38, "sx": 1, "sy": 1 }, "scaled": true },
+        { "phase": "wait", "frames": "quick", "ease": "glide", "to": { "angle": 45 }, "scaled": true },
+        { "phase": "topple", "frames": "quick", "ease": "in", "to": { "angle": 90 }, "scaled": true },
+        { "phase": "flat", "set": { "angle": 0, "x": 1, "pivot": [0, 0] } },
+        { "phase": "impact", "frames": "tick", "ease": "out", "to": { "sx": 1.1, "sy": 0.9 }, "call": "impact" },
+        { "phase": "decrease", "frames": "settle", "ease": "wobble", "to": { "sx": 1, "sy": 1 } }
+      ]
+    },
+    "tumble": {
+      "family": "physics",
+      "use": "A cube or a die dropping in: it falls, bounces twice and lands flat.",
+      "avoid": "Art that is not the same after a quarter turn.",
+      "body": "bottom",
+      "from": { "y": -2, "angle": -90, "alpha": 1 },
+      "steps": [
+        { "phase": "fall", "frames": "snappy", "ease": "in", "to": { "y": 0, "angle": 0 }, "scaled": true },
+        { "phase": "impact", "frames": "tick", "ease": "out", "to": { "sx": 1.2, "sy": 0.8 }, "call": "impact" },
+        { "phase": "bounce", "frames": "quick", "ease": "out", "to": { "y": -0.45, "sx": 0.95, "sy": 1.06, "angle": 45 }, "scaled": true },
+        { "phase": "fall", "frames": "quick", "ease": "in", "to": { "y": 0, "sx": 1, "sy": 1, "angle": 90 }, "scaled": true },
+        { "phase": "flat", "set": { "angle": 0 } },
+        { "phase": "impact", "frames": "tick", "ease": "out", "to": { "sx": 1.12, "sy": 0.88 }, "call": "impact" },
+        { "phase": "bounce", "frames": "tick", "ease": "out", "to": { "y": -0.15, "sx": 1, "sy": 1 }, "scaled": true },
+        { "phase": "fall", "frames": "tick", "ease": "in", "to": { "y": 0 }, "scaled": true },
+        { "phase": "impact", "frames": "tick", "ease": "out", "to": { "sx": 1.06, "sy": 0.94 }, "call": "impact" },
+        { "phase": "decrease", "frames": "settle", "ease": "wobble", "to": { "sx": 1, "sy": 1 } }
+      ]
+    },
+    "turn": {
+      "family": "physics",
+      "use": "A cube turning to its next face: a multiplier, a meter or a value that changes in place.",
+      "avoid": "Changes the player should not notice.",
+      "steps": [
+        { "phase": "anticipate", "frames": "tick", "ease": "out", "to": { "rx": -8 } },
+        { "phase": "turn", "frames": "snappy", "ease": "out", "to": { "rx": 100 }, "scaled": true },
+        { "phase": "wait", "frames": "quick", "ease": "glide", "to": { "rx": 99 }, "scaled": true },
+        { "phase": "decrease", "frames": "settle", "ease": "wobble", "to": { "rx": 90 } },
+        { "phase": "next face", "set": { "rx": 0 }, "call": "advance" }
+      ]
+    },
+    "swap": {
+      "family": "change",
+      "use": "One piece becoming another: an upgrade, a mystery reveal, a symbol transforming.",
+      "avoid": "Pieces that change without a reason the player can see.",
+      "body": "center",
+      "steps": [
+        { "phase": "anticipate", "frames": "tick", "ease": "glide", "to": { "scale": 0.92 } },
+        { "phase": "wow", "frames": "quick", "ease": "out", "to": { "scale": 1.2, "flash": 1 } },
+        { "phase": "wait", "frames": "snappy", "ease": "glide", "to": { "scale": 1.22 }, "scaled": true, "call": "swap" },
+        { "phase": "decrease", "frames": "settle", "ease": "wobble", "to": { "scale": 1 },
+          "with": [{ "frames": "snappy", "ease": "out", "to": { "flash": 0 } }] }
+      ]
+    },
+    "flip": {
+      "family": "change",
+      "use": "A face-down piece showing its value: a card, a coin, a pick.",
+      "avoid": "Pieces that have no back.",
+      "body": "center",
+      "steps": [
+        { "phase": "lift", "frames": "quick", "ease": "out", "to": { "y": -0.12, "sx": 1.06, "sy": 1.06 } },
+        { "phase": "turn away", "frames": "quick", "ease": "in", "to": { "sx": 0 }, "scaled": true },
+        { "phase": "turn in", "frames": "quick", "ease": "out", "to": { "sx": 1.15, "sy": 1.15 }, "scaled": true, "call": "swap" },
+        { "phase": "wait", "frames": "snappy", "ease": "glide", "to": { "sx": 1.16, "sy": 1.16 }, "scaled": true },
+        { "phase": "decrease", "frames": "settle", "ease": "wobble", "to": { "sx": 1, "sy": 1, "y": 0 } }
+      ]
+    },
+    "fly": {
+      "family": "travel",
+      "use": "Values or coins collecting into a counter or a meter.",
+      "avoid": "More than about 12 pieces at once: group them.",
+      "body": "center",
+      "path": { "spread": 3, "lift": 2.5, "bend": 3 },
+      "stagger": "burst",
+      "arrive": { "primitive": "wow", "variant": "S" },
+      "from": { "path": -1 },
+      "steps": [
+        { "phase": "burst", "frames": "snappy", "ease": "out", "to": { "scale": 1.25, "path": 0 } },
+        { "phase": "arc", "frames": "base", "ease": "in", "to": { "scale": 0.8, "path": 1 }, "scaled": true },
+        { "phase": "arrive", "set": {}, "call": "arrive" }
+      ]
+    },
+    "count": {
+      "family": "numbers",
+      "use": "Any amount that grows: the win box, a total, a meter.",
+      "avoid": "Counting down, or counting what the player did not win.",
+      "finish": { "primitive": "wow", "variant": "S" },
+      "steps": [
+        { "phase": "count", "frames": "slow", "ease": "out", "to": { "value": 1 }, "scaled": true }
+      ]
+    },
+    "cascade": {
+      "family": "enter",
+      "use": "A group arriving: a row of picks, a set of coins, menu items.",
+      "avoid": "Groups of more than about 15: they take too long, group them into rows.",
+      "each": "popIn",
+      "stagger": "group",
+      "order": ["reading", "centre"]
+    }
+  },
+  "rules": [
+    "Every emphasis is a wow: anticipate, wow, wait, decrease. Never a plain up-and-back pulse.",
+    "Durations come from the frame scale (5, 8, 13, 21, 34, 55, 89 frames at 60 fps). Never invent one.",
+    "Eases come from the six by intent: out, in, glide, pop, wobble, linear. Never the default or a custom curve.",
+    "Arrivals overshoot. Exits never do, and take at most 60% of the arrival.",
+    "Impacts squash and launches stretch, keeping the area: sx times sy stays within 0.9 to 1.1.",
+    "Moves and holds follow the turbo clock. Contacts and accents keep their frames.",
+    "One hero at a time: while an L plays nothing else starts an M or an L. Groups stagger 2 to 6 frames.",
+    "Animate the rig: move and body. Never the pinned root, never the art.",
+    "Rest is still. Idle motion only on pieces that carry the scene, at most 4% of their size, on 144 and 233 frame cycles.",
+    "Everything can skip to its end: progress(1) leaves the rest pose, never a piece half-way.",
+    "Every contact has a sound on its frame: an impact, the pop of a wow, a slam, a swap.",
+    "No flashing faster than 3 times a second, and no full-screen white flash.",
+    "Transforms and alpha only. A filter runs only while its effect plays.",
+    "A new primitive on a piece replaces the one playing and starts from where the piece is."
+  ],
+  "rules_ru": [
+    "Акцент всегда делаем через wow: anticipate, wow, wait, decrease. Простой пульс туда и обратно не годится.",
+    "Длительности берём со шкалы кадров (5, 8, 13, 21, 34, 55, 89 кадров при 60 fps). Свои не придумываем.",
+    "Кривую выбираем из шести по смыслу: out, in, glide, pop, wobble, linear. Ни кривой по умолчанию, ни самодельной.",
+    "Появление с перелётом. Уход без перелёта и не дольше 60% появления.",
+    "Удар сплющивает, отрыв вытягивает, площадь сохраняется: sx × sy держится в пределах от 0.9 до 1.1.",
+    "Движения и паузы идут по часам turbo. Контакты и акценты держат свои кадры.",
+    "Один герой за раз: пока играет L, никто другой не начинает ни M, ни L. Группы идут лесенкой с шагом от 2 до 6 кадров.",
+    "Анимируем rig: слои move и body. Не трогаем ни закреплённый root, ни арт.",
+    "В покое ничего не двигается. Idle-движение только у элементов, на которых держится сцена: не больше 4% их размера, на циклах в 144 и 233 кадра.",
+    "Любую анимацию можно промотать в конец: progress(1) оставляет элемент в позе покоя, а не на полпути.",
+    "Каждый контакт звучит ровно в своём кадре: удар, pop у wow, slam, swap.",
+    "Никаких вспышек чаще 3 раз в секунду и никакой белой вспышки на весь экран.",
+    "Только трансформации и alpha. Фильтр включаем только на время его эффекта.",
+    "Новый примитив на элементе заменяет текущий и стартует оттуда, где элемент сейчас."
+  ]
+}

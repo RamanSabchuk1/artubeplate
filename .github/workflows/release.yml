@@ -1,0 +1,64 @@
+name: Release
+
+# Publishes @artubeplate/core and create-artubeplate to npm with OIDC TRUSTED PUBLISHING when a
+# v* tag is pushed. No long-lived NPM_TOKEN secret.
+#
+#   # bump "version" in packages/core/package.json AND packages/create-artubeplate/package.json,
+#   # and CORE_VERSION in packages/create-artubeplate/index.js (the range new games depend on);
+#   # commit, then:
+#   git tag v0.1.0 && git push origin main v0.1.0
+#
+# ── One-time npm setup (npmjs.com, by the package owner), for EACH of the two packages ──
+#   Settings → Trusted Publisher → GitHub Actions:
+#     Organization or user: schmooky
+#     Repository:           artubeplate
+#     Workflow filename:    release.yml
+#     Environment:          npm-publish
+#   Then create the `npm-publish` environment in the GitHub repository settings.
+#   (The very first publish of a new package name may have to be done by hand with `npm publish`
+#   before a trusted publisher can be attached to it.)
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    name: build · test · publish to npm
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write # npm OIDC trusted publishing + provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          # Do NOT set registry-url: it would seed a placeholder token and skip OIDC.
+
+      # Trusted publishing needs npm >= 11.5.1. Pin an exact, known-good version.
+      - run: npm install -g npm@11.5.2
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm math:check
+
+      - name: The tag, both package versions and the scaffolder's core range agree
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          for p in packages/core packages/create-artubeplate; do
+            got="$(node -p "require('./$p/package.json').version")"
+            [ "$got" = "$v" ] || { echo "::error::$p is $got, the tag says $v"; exit 1; }
+          done
+          grep -q "CORE_VERSION = '\^$v'" packages/create-artubeplate/index.js \
+            || { echo "::error::CORE_VERSION in packages/create-artubeplate/index.js is not ^$v"; exit 1; }
+
+      # npm (not pnpm) publishes: only npm performs the OIDC token exchange. Provenance is automatic.
+      - run: npm publish --access public --provenance
+        working-directory: packages/core
+      - run: npm publish --access public --provenance
+        working-directory: packages/create-artubeplate

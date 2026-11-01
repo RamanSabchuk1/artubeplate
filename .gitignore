@@ -1,0 +1,12 @@
+node_modules
+dist
+*.local
+.DS_Store
+.vite
+coverage
+test-results
+*.tsbuildinfo
+.assetpack
+public/assets/
+*.tgz
+out/

@@ -1,0 +1,10 @@
+node_modules
+/dist
+*.local
+.env
+.DS_Store
+.vite
+test-results
+# the asset pipeline's output and cache (npm run dev / build make them from raw-assets/)
+/public/assets/
+.assetpack/

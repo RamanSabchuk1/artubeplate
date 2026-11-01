@@ -1,0 +1,25 @@
+{
+  "name": "artubeplate",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "description": "Monorepo for @artubeplate/core \u2014 a batteries-included Artube RGS game core (SignalR transport, artifact-backed mock RGS, round FSM, open-slot-ui HUD, free rounds, math tooling) \u2014 plus create-artubeplate (the scaffolder + its showcase game).",
+  "author": "Dmitry Vasiliev",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.15"
+  },
+  "scripts": {
+    "dev": "pnpm --filter artubeplate-showcase dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "math:generate": "pnpm --filter artubeplate-math generate",
+    "math:check": "node packages/core/dist/cli.js math validate packages/create-artubeplate/template/math",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.0"
+  }
+}

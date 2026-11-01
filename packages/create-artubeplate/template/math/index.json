@@ -1,0 +1,559 @@
+{
+  "settings": {
+    "betCredit": 100,
+    "gameModes": [
+      {
+        "name": "base",
+        "cost": 100,
+        "type": "None",
+        "rtp": 96.2,
+        "volatility": "High"
+      },
+      {
+        "name": "buyfs",
+        "cost": 10000,
+        "type": "Purchase",
+        "rtp": 96.2,
+        "volatility": "Very High"
+      },
+      {
+        "name": "luckybet",
+        "cost": 125,
+        "type": "LuckyBet",
+        "rtp": 96.2,
+        "volatility": "High"
+      }
+    ],
+    "config": {
+      "schema": "artubeplate/slot@1",
+      "title": "Whisker Pharaoh",
+      "board": {
+        "reels": 5,
+        "rows": 4
+      },
+      "symbols": [
+        {
+          "id": "H1",
+          "name": "Sacred cat",
+          "kind": "high",
+          "label": "😺",
+          "color": "#b23a48"
+        },
+        {
+          "id": "H2",
+          "name": "Temple cat",
+          "kind": "high",
+          "label": "🐯",
+          "color": "#7b4bd6"
+        },
+        {
+          "id": "H3",
+          "name": "Street cat",
+          "kind": "high",
+          "label": "🐈",
+          "color": "#2f8f6e"
+        },
+        {
+          "id": "H4",
+          "name": "House cat",
+          "kind": "high",
+          "label": "🐱",
+          "color": "#2b6cb0"
+        },
+        {
+          "id": "M1",
+          "name": "Ankh",
+          "kind": "mid",
+          "label": "☥",
+          "color": "#4a5a73"
+        },
+        {
+          "id": "M2",
+          "name": "Crook",
+          "kind": "mid",
+          "label": "⚑",
+          "color": "#5b6272"
+        },
+        {
+          "id": "A",
+          "name": "Ace",
+          "kind": "low",
+          "label": "A",
+          "color": "#3a4a5c"
+        },
+        {
+          "id": "K",
+          "name": "King",
+          "kind": "low",
+          "label": "K",
+          "color": "#4a3d5c"
+        },
+        {
+          "id": "Q",
+          "name": "Queen",
+          "kind": "low",
+          "label": "Q",
+          "color": "#3a5448"
+        },
+        {
+          "id": "J",
+          "name": "Jack",
+          "kind": "low",
+          "label": "J",
+          "color": "#5a3a46"
+        },
+        {
+          "id": "T",
+          "name": "Ten",
+          "kind": "low",
+          "label": "10",
+          "color": "#3f444d"
+        },
+        {
+          "id": "W",
+          "name": "Wild",
+          "kind": "wild",
+          "label": "WILD",
+          "color": "#f2f4f7"
+        },
+        {
+          "id": "S",
+          "name": "Paw Scatter",
+          "kind": "scatter",
+          "label": "🐾",
+          "color": "#161b26"
+        }
+      ],
+      "pays": {
+        "unit": "lineBet",
+        "lines": 40,
+        "table": {
+          "H1": {
+            "3": 60,
+            "4": 200,
+            "5": 800
+          },
+          "H2": {
+            "3": 50,
+            "4": 150,
+            "5": 500
+          },
+          "H3": {
+            "3": 30,
+            "4": 80,
+            "5": 300
+          },
+          "H4": {
+            "3": 20,
+            "4": 50,
+            "5": 200
+          },
+          "M1": {
+            "3": 14,
+            "4": 30,
+            "5": 150
+          },
+          "M2": {
+            "3": 10,
+            "4": 20,
+            "5": 100
+          },
+          "A": {
+            "3": 6,
+            "4": 12,
+            "5": 60
+          },
+          "K": {
+            "3": 6,
+            "4": 12,
+            "5": 60
+          },
+          "Q": {
+            "3": 4,
+            "4": 10,
+            "5": 40
+          },
+          "J": {
+            "3": 4,
+            "4": 10,
+            "5": 40
+          },
+          "T": {
+            "3": 4,
+            "4": 10,
+            "5": 40
+          }
+        }
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          2,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          3,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          2,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          0,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          1,
+          2,
+          2
+        ],
+        [
+          1,
+          1,
+          2,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          3,
+          2,
+          2
+        ],
+        [
+          0,
+          1,
+          2,
+          2,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          1,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          2,
+          0
+        ],
+        [
+          1,
+          3,
+          1,
+          3,
+          1
+        ],
+        [
+          0,
+          3,
+          0,
+          3,
+          0
+        ],
+        [
+          3,
+          0,
+          3,
+          0,
+          3
+        ],
+        [
+          0,
+          2,
+          3,
+          2,
+          0
+        ],
+        [
+          3,
+          1,
+          0,
+          1,
+          3
+        ],
+        [
+          1,
+          3,
+          3,
+          3,
+          1
+        ],
+        [
+          2,
+          0,
+          0,
+          0,
+          2
+        ]
+      ],
+      "wild": {
+        "symbol": "W",
+        "reels": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "multipliers": [
+          2,
+          3
+        ],
+        "multipliersAdd": true
+      },
+      "scatter": {
+        "symbol": "S",
+        "pays": {
+          "3": 5,
+          "4": 5,
+          "5": 5
+        },
+        "freeSpins": {
+          "3": 8,
+          "4": 12,
+          "5": 16
+        }
+      },
+      "freeSpins": {
+        "retrigger": 2,
+        "sticky": true
+      },
+      "bonus": {
+        "name": "Paw Parade",
+        "rules": [
+          "Every Wild that lands during the free spins stays in place until the last one.",
+          "Wilds carry 2× or 3×, and several on one line add their multipliers up.",
+          "A full column of one cat on reel 1 adds 2 more free spins."
+        ]
+      },
+      "respin": {
+        "reel": 0,
+        "symbols": [
+          "H1",
+          "H2",
+          "H3",
+          "H4"
+        ],
+        "max": 3
+      },
+      "maxWin": 5000,
+      "modes": {
+        "base": {
+          "name": "Base game"
+        },
+        "buyfs": {
+          "name": "Free Spins",
+          "description": "Buy the Free Spins round: 3 to 5 Paw Scatters land and 8 to 16 free spins start at once."
+        },
+        "luckybet": {
+          "name": "Lucky Bet",
+          "description": "A 1.25× ante that roughly doubles how often Free Spins trigger."
+        }
+      },
+      "texts": {
+        "about": "{{title}} is a 5×4 slot with 40 fixed paylines. Match symbols left to right on a line to win; the sacred cats pay the most.",
+        "wild": "The Wild lands on reels 2 to 5 and substitutes for every symbol except the Paw Scatter. Each Wild carries a random 2× or 3×; several Wilds on one line ADD their multipliers.",
+        "scatter": "3, 4 or 5 Paw Scatters anywhere pay 5× the total bet and trigger 8, 12 or 16 Free Spins.",
+        "freeSpins": "Wilds that land during Free Spins are STICKY for the rest of the round. A full column of one cat on reel 1 adds +2 Free Spins.",
+        "respin": "A full column of one cat on reel 1 holds that column and every Wild, then respins the other reels up to 3 times for a win with that cat."
+      }
+    }
+  },
+  "modes": [
+    {
+      "name": "base",
+      "events": "books_base.jsonl.zst",
+      "weights": "lookUpTable_base_0.csv.zst"
+    },
+    {
+      "name": "buyfs",
+      "events": "books_buyfs.jsonl.zst",
+      "weights": "lookUpTable_buyfs_0.csv.zst"
+    },
+    {
+      "name": "luckybet",
+      "events": "books_luckybet.jsonl.zst",
+      "weights": "lookUpTable_luckybet_0.csv.zst"
+    }
+  ]
+}

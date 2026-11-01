@@ -1,0 +1,18 @@
+{
+  "name": "artubeplate-math",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Dev-only math generator for the create-artubeplate showcase slot — pure TS. Emits the Artube upload set (index.json + lookUpTable_*_0.csv.zst + books_*.jsonl.zst) into the template's math/ folder. NOT shipped in the scaffold.",
+  "scripts": {
+    "generate": "tsx --conditions=source src/generate.ts",
+    "calibrate": "tsx --conditions=source src/calibrate.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@artubeplate/core": "workspace:*",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3"
+  }
+}
