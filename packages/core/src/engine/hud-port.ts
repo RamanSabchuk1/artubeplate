@@ -33,9 +33,10 @@ export interface HudPort {
   /** One settled round → net position + autoplay limits. `stake` is what the player paid. */
   reportRound(win: number, stake: number): void;
   /**
-   * The player's autoplay, for a game to end it where its settings say: "stop on feature" at a
-   * bonus's trigger (so the bonus plays at its own pace and waits for the player), "stop on any
-   * win" after a paying round (the core does that one itself).
+   * The player's autoplay: whether a run is going, what the player chose to stop it on, and a
+   * stop. The core ends a run by itself on every setting: "stop on feature" when the game marks
+   * its bonus's start (`ctx.turbo.feature(true)`), "stop on any win" after a paying round, and a
+   * run that cannot pay its next round, with the insufficient-funds message.
    */
   autoplay: { active(): boolean; stopOnFeature(): boolean; stopOnAnyWin(): boolean; stop(): void };
   /** The HUD's localized message for an RGS-style code (`ERR_IPB`, …). */

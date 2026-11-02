@@ -46,8 +46,8 @@ importers:
         specifier: ^0.18.4
         version: 0.18.4
       '@open-slot-ui/dom':
-        specifier: ^0.18.9
-        version: 0.18.9
+        specifier: ^0.18.10
+        version: 0.18.10
       '@pylinka/core':
         specifier: ^2.1.0
         version: 2.1.0(pixi.js@8.21.0)
@@ -96,11 +96,11 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0
       '@open-slot-ui/core':
-        specifier: ^0.18.2
-        version: 0.18.2
-      '@open-slot-ui/dom':
         specifier: ^0.18.4
         version: 0.18.4
+      '@open-slot-ui/dom':
+        specifier: ^0.18.10
+        version: 0.18.10
       '@schmooky/zvuk':
         specifier: ^1.14.1
         version: 1.14.1
@@ -974,19 +974,12 @@ packages:
     resolution: {integrity: sha512-gOYKFwkojSdWrSmreCcGocRcAXSpRkNZYxv6nscmtddSWBKVGypdMbfLxu5qgmymdaCNApajuwZblYEfs7HswA==}
     engines: {node: '>= 10'}
 
-  '@open-slot-ui/core@0.18.2':
-    resolution: {integrity: sha512-HmGNc8mzZJp6q/X5j43nIbmn1P6JutMlWbSGrWma3moQ/gIvQqGTOGBUzmEkG6v2oFgNfll+FcWoPV2AxHy7mw==}
-    engines: {node: '>=18'}
-
   '@open-slot-ui/core@0.18.4':
     resolution: {integrity: sha512-Q4wNkDN4upL5Wnl3CNcN5iyvPjWUcNu/0WFQEtTgEXnsB7RnHp/6AFL/tF664m9feQCcAGRn0aMeHrOHZiYKjw==}
     engines: {node: '>=18'}
 
-  '@open-slot-ui/dom@0.18.4':
-    resolution: {integrity: sha512-hzISzH89EpyvbA23/h1onSFFkYrIyJVTMJmjvkvlIX9nzya3UKBirqza2Nihm0Z15yPRKyEJM6Dt4gLul4PCBg==}
-
-  '@open-slot-ui/dom@0.18.9':
-    resolution: {integrity: sha512-IrciDmgLUaBMeeBTH+MAaB2+8A9tqF2iEbM1wNOmsnLtUbeFSUXUe6ZFsqHeOctlEjrR4KyPIhEazQVO67e9Sw==}
+  '@open-slot-ui/dom@0.18.10':
+    resolution: {integrity: sha512-ugH6XXi33i3xo6wybYyXq9kBlrDErzX4La9Swz2wUkbV2HTozT+jXdqb7I/n+ZRVat+/2dwDkfunxS1/oggYNQ==}
 
   '@oxc-project/types@0.151.0':
     resolution: {integrity: sha512-J1yXrIlNDZVzE3ada310xeAw7nH8yCAyLPuUIsjKatFPmfn5bS1oW+cM+QsGOtVWd5nhSpbwZWx/rue+r5Z+PA==}
@@ -3503,15 +3496,9 @@ snapshots:
       '@node-rs/crc32-win32-ia32-msvc': 1.10.8
       '@node-rs/crc32-win32-x64-msvc': 1.10.8
 
-  '@open-slot-ui/core@0.18.2': {}
-
   '@open-slot-ui/core@0.18.4': {}
 
-  '@open-slot-ui/dom@0.18.4':
-    dependencies:
-      '@open-slot-ui/core': 0.18.2
-
-  '@open-slot-ui/dom@0.18.9':
+  '@open-slot-ui/dom@0.18.10':
     dependencies:
       '@open-slot-ui/core': 0.18.4
 

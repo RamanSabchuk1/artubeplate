@@ -108,7 +108,7 @@ pnpm build            # builds @artubeplate/core
 pnpm dev              # the showcase at http://localhost:8080 (mock RGS)
 pnpm test             # core unit tests + scaffolder tests
 pnpm typecheck
-pnpm e2e              # Playwright: 15 scenarios on the mock RGS
+pnpm e2e              # Playwright: 31 scenarios on the mock RGS, 16 of them autoplay
 pnpm math:check       # validate the showcase math
 pnpm math:generate    # regenerate the showcase math (Monte-Carlo, RTP pinned to 96.20)
 ```

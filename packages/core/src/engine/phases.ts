@@ -145,6 +145,16 @@ export class PresentPhase<T = unknown, V = unknown, P = unknown> implements Phas
   }
 }
 
+/** What the next round costs the player, as the spin phase charges it: the bet times the price of
+ *  the mode that is switched on (a boost), rounded to the currency's smallest unit, or nothing
+ *  during operator free rounds. A bought feature is one round and never repeats. */
+export function nextRoundPrice(stores: PhaseContext['stores']): number {
+  if (stores.frc.active) return 0;
+  const mode = stores.session.mode(stores.ui.activeMode.get() ?? stores.ui.baseMode);
+  const unit = stores.session.current.get()?.sessionSettings.currencyMinimalUnit ?? 0.01;
+  return roundMoney(stores.balance.bet.get() * (mode?.priceMultiplier ?? 1), unit);
+}
+
 /** Land the authoritative balance + win, cap notice, history, then Idle. */
 export class SettlePhase<T = unknown, V = unknown, P = unknown> implements Phase<T, V, P> {
   readonly name = 'settle';
@@ -163,6 +173,14 @@ export class SettlePhase<T = unknown, V = unknown, P = unknown> implements Phase
       ctx.hud.setWin(r.totalWin);
       ctx.hud.setHudState(r.totalWin > 0 ? 'winPresentation' : 'result');
       if (!r.replay) ctx.hud.reportRound(r.totalWin, r.stake);
+      // A run that cannot pay its next round ends here and says why (Artube's checklist: autoplay
+      // stops on a low balance with a message). The HUD ends a run by itself, with the
+      // insufficient-funds message, once the balance falls under the bet; a boost's round costs
+      // more than the bet, and a balance between the two is left to the core.
+      if (!r.replay && ctx.hud.autoplay.active() && r.balance + 1e-9 < nextRoundPrice(ctx.stores)) {
+        ctx.hud.autoplay.stop();
+        ctx.hud.showRgsError('ERR_IPB');
+      }
       const minMs = ctx.config.minRoundMs ?? 0;
       const elapsed = (ctx.ticker.now() - this.startedAt) * 1000;
       if (minMs > 0 && elapsed < minMs) await ctx.ticker.delay(minMs - elapsed);

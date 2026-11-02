@@ -43,6 +43,7 @@ import { domHudPort, livesPips } from './hudAdapter';
 import { createArtubeLoader, type GameLoader } from './loader';
 import { showBootError } from './bootError';
 import { gamificationView, startGamification, type GamificationOptions, type GamificationView } from './gamification';
+import { autoplayLoop } from './autoplay';
 
 /** Declarative audio: the core builds the zvuk mixer (in its own lazy chunk) and wires it. */
 export interface AudioSpec extends GameAudioOptions {
@@ -818,12 +819,6 @@ export function createArtubeGame<T = unknown, V = unknown, P = unknown>(opts: Cr
     // root, which would draw the HUD's DEMO pill as well.
     disposers.push(hudObj.on('autoplayStarted', syncControls), hudObj.on('autoplayStopped', syncControls));
 
-    // ── autoplay: the HUD owns the count + limits (via reportRound); the core runs the loop ──
-    disposers.push(hudObj.on('autoplayStarted', () => {
-      turbo.setAutoplay(true);
-      beginSpin();
-    }));
-    disposers.push(hudObj.on('autoplayStopped', () => turbo.setAutoplay(holding)));
     // ── hold to spin: the round button held down plays rounds until it is let go, at the
     //    autoplay pace (the HUD arms the press, `spin.press` in the spec) ──
     let holding = false;
@@ -841,22 +836,19 @@ export function createArtubeGame<T = unknown, V = unknown, P = unknown>(opts: Cr
       }),
     );
     const gapMs = config.autoplayGapMs ?? 250;
-    let wasSpinning = false;
+    // ── autoplay: the HUD owns the run (its count, its limits, its stop); the core plays it and
+    //    ends it on what only the core sees: a bonus, a win, a notice, a balance (./autoplay) ──
     disposers.push(
-      stores.ui.spinning.subscribe((spinning) => {
-        const settled = wasSpinning && !spinning;
-        wasSpinning = spinning;
-        if (!settled) return;
-        void turbo.delay(gapMs).then(() => {
-          if (machine.current !== 'idle' || !(hudObj.ui.autoplay.isActive || holding)) return;
-          if (hudObj.ui.noticePanel.isOpen || terminal) return hudObj.ui.autoplay.stop();
-          // "Stop on any win": a paying round ends the autoplay here, before the next round.
-          if (hudObj.ui.autoplay.isActive && hudObj.ui.stopOnAnyWin.isOn && stores.balance.lastWin.get() > 0) return hudObj.ui.autoplay.stop();
-          const mode = stores.session.mode(stores.ui.activeMode.get() ?? stores.ui.baseMode);
-          const price = stores.frc.active ? 0 : stores.balance.bet.get() * (mode?.priceMultiplier ?? 1);
-          if (stores.balance.balance.get() + 1e-9 < price) return hudObj.ui.autoplay.stop();
-          beginSpin();
-        });
+      autoplayLoop({
+        ui: hudObj.ui,
+        turbo,
+        stores,
+        beginSpin,
+        idle: () => machine.current === 'idle',
+        terminal: () => terminal,
+        holding: () => holding,
+        noFunds: () => port?.showRgsError('ERR_IPB'),
+        gapMs,
       }),
     );
 

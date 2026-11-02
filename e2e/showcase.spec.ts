@@ -1,43 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
+import { boot, continueScreen, hudState, rows, snap, waitIdle } from './helpers';
 
 // The showcase on the mock RGS. `window.__GAME__` is the ArtubeGame handle (inspect / requestSpin
 // / requestBuy / network = the MockRgs, scriptable: forceRow, failNext, simulateReconnect…).
 
-type Snap = { phase: string; balance: number; bet: number; lastWin: number; freeRoundsActive: boolean; currency: string | null };
-
-const snap = (page: Page): Promise<Snap> => page.evaluate(() => (window as any).__GAME__.inspect());
-
-async function boot(page: Page, query = ''): Promise<void> {
-  // `intro=0`: straight to the game (the intro has its own tests below).
-  await page.goto(`/?seed=7&latency=40&intro=0${query}`);
-  await expect(page.locator('#PlaceBetBtn')).toBeVisible();
-  await expect.poll(async () => (await snap(page)).phase).toBe('idle');
-  // Turbo on: the rounds run at the turbo pace.
-  await page.evaluate(() => (window as any).__GAME__.hud.ui.speeds[0].set(true));
-}
-
-async function waitIdle(page: Page, timeout = 90_000): Promise<Snap> {
-  await expect.poll(async () => (await snap(page)).phase, { timeout, intervals: [200] }).toBe('idle');
-  return snap(page);
-}
-
-const hudState = (page: Page): Promise<string | null> => page.locator('.OpenSlotUiContainer').getAttribute('data-state');
-
-/** A bonus screen (rules / total) is up: the bar has stepped aside and the screen waits. Click it
- *  away (the first click may only finish its entrance). */
-async function continueScreen(page: Page): Promise<void> {
-  const { width, height } = page.viewportSize()!;
-  for (let i = 0; i < 5 && (await hudState(page)) === 'hidden'; i++) {
-    await page.mouse.click(width / 2, height / 2);
-    await page.waitForTimeout(700);
-  }
-  expect(await hudState(page)).not.toBe('hidden');
-}
-
-/** Book rows of a mode matching a predicate, straight from the mock's loaded math. */
-function rows(page: Page, mode: string, pred: string): Promise<number[]> {
-  return page.evaluate(([m, p]) => (window as any).__GAME__.network.rowsWhere(m, new Function('mult', 'book', `return ${p}`)), [mode, pred] as const);
-}
 
 test('boots on the mock RGS: Artube loader gone, HUD built from the session', async ({ page }) => {
   await boot(page);
@@ -217,27 +183,6 @@ test('demo session: currency null → play-money label', async ({ page }) => {
   expect(spill.spill).toBeLessThanOrEqual(0.5);
   // The currency says it; no pill on the balance label as well.
   expect(await page.evaluate(() => getComputedStyle(document.querySelector('#BalanceLabel')!, '::after').content)).toMatch(/^(none|normal)$/);
-});
-
-test('autoplay: the client loops spin and stops after the chosen count', async ({ page }) => {
-  await boot(page);
-  await page.locator('#AutoplayBtn').click();
-  await page.locator('#AutoplayNavList li').first().click(); // 10 rounds
-  // Count the rounds the transport is asked for.
-  await page.evaluate(() => {
-    const net = (window as any).__GAME__.network;
-    const spin = net.spin.bind(net);
-    (window as any).__spins = 0;
-    net.spin = (...args: unknown[]) => {
-      (window as any).__spins++;
-      return spin(...args);
-    };
-  });
-  await page.locator('#StartAutoplayBtn').click();
-  await expect.poll(async () => page.evaluate(() => (window as any).__spins), { timeout: 110_000, intervals: [500] }).toBeGreaterThanOrEqual(10);
-  await waitIdle(page);
-  expect(await page.evaluate(() => (window as any).__GAME__.hud.ui.autoplay.isActive)).toBe(false);
-  expect(await page.evaluate(() => (window as any).__spins)).toBe(10);
 });
 
 test('mobile portrait layout', async ({ browser }) => {

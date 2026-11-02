@@ -176,10 +176,9 @@ export function makePresentPhases(deps: PresentDeps): Phase<SpinModel, Scene, un
       }
 
       if (model.free?.spins.length) {
-        // The feature: autoplay ends here when the player asked it to stop on a feature, so the
-        // bonus plays at its own pace and waits for them. From here the bonus takes the BONUS GAME
+        // The feature starts here. The core ends autoplay at this call when the player asked it to
+        // stop on a feature, so the bonus waits for them. From here the bonus takes the BONUS GAME
         // turbo switch, and a slam of this spin is cleared: the free spins never play at slam speed.
-        if (ctx.hud.autoplay.active() && ctx.hud.autoplay.stopOnFeature()) ctx.hud.autoplay.stop();
         ctx.turbo.feature(true);
         await ctx.fsm.transition('present-free');
       } else await finishAndSettle(ctx, (model.respins.at(-1) ?? model.base).wins);

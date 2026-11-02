@@ -61,6 +61,7 @@ export class TurboClock implements TurboState {
   private _hold = false;
   private readonly _next: Partial<Record<TurboScope, number>> = {};
   private readonly pending = new Set<() => void>();
+  private readonly featureListeners = new Set<(active: boolean) => void>();
 
   constructor(speeds?: number[], autoplaySpeed?: number) {
     this.speeds = speeds && speeds.length ? speeds : DEFAULT_TURBO_SPEEDS;
@@ -119,15 +120,24 @@ export class TurboClock implements TurboState {
   }
 
   feature(active: boolean): void {
+    const edge = active !== this._feature;
     // A slam belongs to the part of the round it was pressed in. Without this, slamming the reels
     // of the spin that lands the bonus left `skipped` set for the whole round, and every delay
     // and animation of the bonus ran at slam speed with turbo off.
-    if (active !== this._feature) {
+    if (edge) {
       this._skipped = false;
       // Crossing into (or out of) the bonus starts a new spin: a speed chosen on the way counts.
       this.applyWaiting();
     }
     this._feature = active;
+    if (edge) for (const fn of [...this.featureListeners]) fn(active);
+  }
+
+  /** Hear the bonus's edges (`feature(true)` and `feature(false)`, once each): the core ends the
+   *  player's autoplay at a bonus when they asked it to stop on a feature. Returns the unsubscribe. */
+  onFeature(fn: (active: boolean) => void): () => void {
+    this.featureListeners.add(fn);
+    return () => void this.featureListeners.delete(fn);
   }
 
   /** Mark autoplay/hold as running so `delay()` shortens game animations. The core sets
