@@ -39,3 +39,25 @@ export async function continueScreen(page: Page): Promise<void> {
 export function rows(page: Page, mode: string, pred: string): Promise<number[]> {
   return page.evaluate(([m, p]) => (window as any).__GAME__.network.rowsWhere(m, new Function('mult', 'book', `return ${p}`)), [mode, pred] as const);
 }
+
+/**
+ * Note every face the dialog shows from now on, in order: a busy notice's caption (`busy:…`) or a
+ * card's title (`card:…`). A spinner may be up for a fraction of a second, too short for a check
+ * that polls on a slow machine (CI renders at a few frames a second); the log keeps it.
+ */
+export async function recordDialogs(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const w = window as any;
+    w.__dialogs = [];
+    const note = (): void => {
+      const d = document.querySelector('#DialogWindow.is-visible');
+      if (!d) return;
+      const face = d.classList.contains('is-busy')
+        ? `busy:${d.querySelector('.Dialog__body-inner p')?.textContent ?? ''}`
+        : `card:${d.querySelector('.Dialog__title')?.textContent ?? ''}`;
+      if (w.__dialogs[w.__dialogs.length - 1] !== face) w.__dialogs.push(face);
+    };
+    new MutationObserver(note).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+  });
+}
+export const dialogLog = (page: Page): Promise<string[]> => page.evaluate(() => (window as any).__dialogs as string[]);

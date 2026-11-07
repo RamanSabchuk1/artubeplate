@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { boot, continueScreen, hudState, rows, snap, waitIdle } from './helpers';
+import { boot, continueScreen, hudState, rows, snap, waitIdle, dialogLog, recordDialogs } from './helpers';
 
 // Runs of rounds and whole bonuses: longer than the suite's default per test.
 test.describe.configure({ timeout: 300_000 });
@@ -276,8 +276,10 @@ test.describe('autoplay: interrupting a run', () => {
     await tapRounds(page, 100);
     await expect.poll(() => spins(page), { timeout: 30_000, intervals: [100] }).toBeGreaterThanOrEqual(2);
     // The connection drops as the next round is sent; the core reconnects by itself.
+    await recordDialogs(page);
     await page.evaluate(() => (window as any).__GAME__.network.simulateOutage(3000, { at: 'next-spin' }));
-    await expect(page.locator('.Dialog__title')).toHaveText('Connection lost', { timeout: 15_000 });
+    // Artube's reconnect spec: a blocking spinner while the client tries.
+    await expect.poll(() => dialogLog(page), { timeout: 15_000 }).toContain('busy:Reconnecting…');
     expect((await run(page)).active).toBe(false);
     // Back: the notice goes by itself. The round whose answer was lost finished on the server,
     // and the core offers to show it; the player skips it here.

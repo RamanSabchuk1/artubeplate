@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { boot, continueScreen, hudState, rows, snap, waitIdle } from './helpers';
+import { boot, continueScreen, dialogLog, hudState, recordDialogs, rows, snap, waitIdle } from './helpers';
 
 // The showcase on the mock RGS. `window.__GAME__` is the ArtubeGame handle (inspect / requestSpin
 // / requestBuy / network = the MockRgs, scriptable: forceRow, failNext, simulateReconnect…).
@@ -136,16 +136,18 @@ test('errors by errorId: 503 shows insufficient funds and refunds the optimistic
   expect(s.balance).toBe(1000);
 });
 
-test('session end: a 501 is terminal (blocking notice, nothing more is sent)', async ({ page }) => {
+test('session end: a 501 is terminal (blocking notice with RELOAD, nothing more is sent)', async ({ page }) => {
   await boot(page, '&mockError=501');
   await page.locator('#PlaceBetBtn').click();
   await expect(page.locator('.Dialog__title')).toHaveText('Session ended');
+  await expect(page.locator('#DialogWindow .Dialog__action')).toHaveText('Reload');
 });
 
-test('reconnect: blocking notice while down, session re-read when back', async ({ page }) => {
+test('reconnect: a blocking spinner while down, session re-read when back', async ({ page }) => {
   await boot(page);
+  await recordDialogs(page);
   await page.evaluate(() => void (window as any).__GAME__.network.simulateReconnect(1500));
-  await expect(page.locator('.Dialog__title')).toHaveText('Connection lost');
+  await expect.poll(() => dialogLog(page), { timeout: 10_000 }).toEqual(['busy:Reconnecting…']);
   await expect(page.locator('#DialogWindow')).toBeHidden({ timeout: 10_000 });
   expect((await snap(page)).phase).toBe('idle');
 });
