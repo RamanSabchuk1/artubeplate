@@ -1,47 +1,85 @@
-// The one screen that can appear before the HUD exists: the game could not connect, had no
-// session, or its math could not be read. Self-contained (inline styles), blocking, and it says
-// what to do — a boot must never fail into a black page.
+// The screen that can appear before the HUD exists: a boot that failed (the session is over, no
+// connection, no session, the math could not be read). It wears the HUD's own dialog: the same
+// markup and the same skin as every notice in play, so a failed boot looks like the game
+// ("SESSION ENDED", a RELOAD bar), never like a separate error page. Blocking, and it always says
+// what to do. While the first connection is tried again, the loader alone is on screen.
+
+import { artubeplateSkinCss } from '../skin';
 
 export interface BootErrorOptions {
   title: string;
   message: string;
-  /** Technical detail, shown small (errorId, URL, exception text). */
+  /**
+   * Technical detail, in small print under the message. For developer cases (the mock's math, a
+   * launch URL with no session); an RGS failure goes to the console instead.
+   */
   detail?: string;
-  /** Show a Reload button (default true). */
+  /** Show RELOAD (default true). */
   reload?: boolean;
 }
 
+export interface BootScreen {
+  /** The boot failed: the dialog, with RELOAD unless `reload: false`. */
+  error(opts: BootErrorOptions): HTMLElement;
+  /** Take the screen away (the boot goes on). */
+  remove(): void;
+}
+
+const STYLE_ID = 'artubeplate-boot-skin';
+
+const esc = (s: string): string => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+/**
+ * The boot's own screen, drawn only when the boot fails. `font` is the game's HUD font family when
+ * its theme sets one.
+ */
+export function bootScreen(host: HTMLElement = document.body, opts: { font?: string } = {}): BootScreen {
+  let root: HTMLElement | null = null;
+  let style: HTMLStyleElement | null = null;
+  const shell = (): HTMLElement => {
+    if (!style && !document.getElementById(STYLE_ID)) {
+      style = document.createElement('style');
+      style.id = STYLE_ID;
+      style.textContent = artubeplateSkinCss;
+      document.head.appendChild(style);
+    }
+    if (!root) {
+      root = document.createElement('div');
+      // The HUD's root class: the skin dresses everything under it. Over the Artube loader (9999).
+      root.className = 'OpenSlotUiContainer artubeplate-boot';
+      root.style.zIndex = '100000';
+      if (opts.font) root.style.setProperty('--ohm-font', opts.font);
+      host.appendChild(root);
+    }
+    return root;
+  };
+  const paint = (html: string): HTMLElement => {
+    const r = shell();
+    r.innerHTML = `<div id="DialogWindow" class="DialogWindow is-visible"><div class="Overlay"></div>${html}</div>`;
+    return r;
+  };
+  return {
+    error(o) {
+      const r = paint(
+        `<div class="Dialog Dialog--info-msg" role="alertdialog" aria-modal="true" aria-labelledby="BootDialogTitle"><div class="Dialog__wrapper">
+          <div class="Dialog__title" id="BootDialogTitle">${esc(o.title)}</div>
+          <div class="Dialog__body"><div class="Dialog__body-inner"><p>${esc(o.message)}</p>${o.detail ? `<p class="Dialog__detail">${esc(o.detail)}</p>` : ''}</div></div>
+          <div class="Dialog__footer"><div class="Dialog__button-group">${o.reload !== false ? '<button type="button" class="Button Button--primary Dialog__action" data-action="reload">Reload</button>' : ''}</div></div>
+        </div></div>`,
+      );
+      r.querySelector('[data-action="reload"]')?.addEventListener('click', () => location.reload());
+      return r;
+    },
+    remove() {
+      root?.remove();
+      style?.remove();
+      root = null;
+      style = null;
+    },
+  };
+}
+
+/** The boot failed: show it in the HUD's dialog (see {@link bootScreen}). */
 export function showBootError(opts: BootErrorOptions, host: HTMLElement = document.body): HTMLElement {
-  const root = document.createElement('div');
-  root.setAttribute('role', 'alertdialog');
-  root.setAttribute('aria-modal', 'true');
-  root.className = 'artubeplate-boot-error';
-  root.style.cssText =
-    'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,8,12,.92);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#f2f4f8;';
-  const card = document.createElement('div');
-  card.style.cssText = 'max-width:420px;width:100%;background:#161a22;border:1px solid #2a3140;border-radius:16px;padding:24px 22px;box-shadow:0 20px 60px rgba(0,0,0,.5);text-align:center;';
-  const h = document.createElement('h2');
-  h.textContent = opts.title;
-  h.style.cssText = 'margin:0 0 10px;font-size:20px;font-weight:700;letter-spacing:.2px;';
-  const p = document.createElement('p');
-  p.textContent = opts.message;
-  p.style.cssText = 'margin:0 0 16px;font-size:15px;line-height:1.45;color:#c9d1de;';
-  card.append(h, p);
-  if (opts.detail) {
-    const d = document.createElement('code');
-    d.textContent = opts.detail;
-    d.style.cssText = 'display:block;margin:0 0 16px;padding:8px 10px;border-radius:8px;background:#0e1117;color:#8b95a7;font-size:12px;word-break:break-word;text-align:left;';
-    card.append(d);
-  }
-  if (opts.reload !== false) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = 'Reload';
-    b.style.cssText = 'appearance:none;border:0;border-radius:999px;padding:11px 28px;font:600 15px system-ui,sans-serif;background:#2fd687;color:#04130b;cursor:pointer;';
-    b.addEventListener('click', () => location.reload());
-    card.append(b);
-  }
-  root.append(card);
-  host.appendChild(root);
-  return root;
+  return bootScreen(host).error(opts);
 }

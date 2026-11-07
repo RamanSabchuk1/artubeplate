@@ -1,6 +1,6 @@
 {
   "name": "create-artubeplate",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Scaffold an Artube RGS slot game on @artubeplate/core — `npm create artubeplate@latest`, optionally with your own math (`-- --math ./path`).",
   "keywords": [
     "artube",

@@ -12,6 +12,11 @@ export interface NoticeRequest {
   actions?: Array<{ label: string; primary?: boolean }>;
   /** Blocking: locks the HUD; no backdrop/✕ dismiss. */
   blocking?: boolean;
+  /**
+   * A spinner over the veil instead of a card: the game waits on something (the connection
+   * being made again). The message is its caption; give it no title and no actions.
+   */
+  busy?: boolean;
 }
 
 export interface HudPort {

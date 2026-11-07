@@ -46,8 +46,8 @@ importers:
         specifier: ^0.18.5
         version: 0.18.5
       '@open-slot-ui/dom':
-        specifier: ^0.18.11
-        version: 0.18.11
+        specifier: ^0.18.12
+        version: 0.18.12
       '@pylinka/core':
         specifier: ^2.1.0
         version: 2.1.0(pixi.js@8.21.0)
@@ -99,8 +99,8 @@ importers:
         specifier: ^0.18.5
         version: 0.18.5
       '@open-slot-ui/dom':
-        specifier: ^0.18.11
-        version: 0.18.11
+        specifier: ^0.18.12
+        version: 0.18.12
       '@schmooky/zvuk':
         specifier: ^1.14.1
         version: 1.14.1
@@ -978,8 +978,8 @@ packages:
     resolution: {integrity: sha512-/JuDfJAEGmgWJI/AqXw345WYtcbZjOW3f5CQK4N+4gzrG0vKbtOzJ6k7lErkJy35o1D8yJVZM0aBYJ4w4X8uhw==}
     engines: {node: '>=18'}
 
-  '@open-slot-ui/dom@0.18.11':
-    resolution: {integrity: sha512-yslb6cjYjMWPzcZvAYodegNEEdVSX37lQh9pC1TkUa1bX2YI+EEf313L/9wG8ZKBqLCGw5qW1iNIXgC0HCPRXg==}
+  '@open-slot-ui/dom@0.18.12':
+    resolution: {integrity: sha512-M4B2me9C5Y9Iab5Obn/s+INE+cwR0/AD9bjPeBByWb2InkgzXG5CPa8Fu8bAz/47Vd4Awk9LSEDwvhnKArvteg==}
 
   '@oxc-project/types@0.151.0':
     resolution: {integrity: sha512-J1yXrIlNDZVzE3ada310xeAw7nH8yCAyLPuUIsjKatFPmfn5bS1oW+cM+QsGOtVWd5nhSpbwZWx/rue+r5Z+PA==}
@@ -3498,7 +3498,7 @@ snapshots:
 
   '@open-slot-ui/core@0.18.5': {}
 
-  '@open-slot-ui/dom@0.18.11':
+  '@open-slot-ui/dom@0.18.12':
     dependencies:
       '@open-slot-ui/core': 0.18.5
 

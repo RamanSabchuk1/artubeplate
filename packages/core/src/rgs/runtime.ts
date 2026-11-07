@@ -51,7 +51,15 @@ export interface MockLaunch {
   force?: Array<{ mode: string; row: number }>;
   /** `?gamification=1` — hand out a dummy gamificationToken. */
   gamification?: boolean;
+  /**
+   * `?mockBoot=session-over|offline|flaky` — script the first connection: the hub refuses the
+   * session (its 501), the server is never reached, or it connects on the third attempt.
+   */
+  boot?: MockBoot;
 }
+
+/** How the mock's first connection goes (see {@link MockLaunch.boot}). */
+export type MockBoot = 'session-over' | 'offline' | 'flaky';
 
 export interface RuntimeConfig {
   sessionId: string | null;
@@ -124,6 +132,7 @@ export function readRuntime(opts: { param?: ParamSource; overrides?: Partial<Run
       ...(errors.length ? { errors } : {}),
       ...(force.length ? { force } : {}),
       ...(param('gamification') === '1' || param('gamification') === 'true' ? { gamification: true } : {}),
+      ...(['session-over', 'offline', 'flaky'].includes(param('mockBoot') ?? '') ? { boot: param('mockBoot') as MockBoot } : {}),
     },
   };
   return { ...base, ...opts.overrides, mockLaunch: { ...base.mockLaunch, ...opts.overrides?.mockLaunch } };

@@ -718,6 +718,17 @@ ${ROOT} .Dialog .Button { flex: 1; height: 50px; display: flex; align-items: cen
 ${ROOT} .Dialog .Button--primary { background: var(--hs-green); }
 ${ROOT} .Dialog .Button--secondary { background: var(--hs-yellow-2); }
 ${ROOT} .Dialog .Button:hover { filter: brightness(1.08); }
+/* Small print under a message (a boot error's technical detail, shown for developer cases only). */
+${ROOT} .Dialog__detail { font-size: 12px; line-height: 16px; color: #6c757d; word-break: break-word; user-select: text; }
+/* A busy notice: the connection is being made again (Artube's reconnect spec: a spinner while it
+   tries, the popup with RELOAD only when that fails). No card: a white ring over the veil with
+   its caption under it. It blocks the game as every notice does, the spacebar included. */
+${ROOT} #DialogWindow.is-busy .Dialog { width: auto; max-width: 100%; box-shadow: none; }
+${ROOT} #DialogWindow.is-busy .Dialog__wrapper { align-items: center; gap: 14px; padding: 0; background: none; color: #fff; overflow: visible; }
+${ROOT} #DialogWindow.is-busy .Dialog__wrapper::before { content: ''; width: 52px; height: 52px; border-radius: 50%; border: 5px solid rgba(255, 255, 255, 0.25); border-top-color: #fff; animation: ap-busy-spin 0.9s linear infinite; }
+${ROOT} #DialogWindow.is-busy .Dialog__title, ${ROOT} #DialogWindow.is-busy .Dialog__footer { display: none; }
+${ROOT} #DialogWindow.is-busy .Dialog__body-inner p { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); user-select: none; }
+@keyframes ap-busy-spin { to { transform: rotate(360deg); } }
 
 /* toasts */
 ${ROOT} .NotificationHolder { position: fixed; top: 44px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 70; }

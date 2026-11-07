@@ -72,6 +72,8 @@ const TRANSPORT_PATTERNS = [
   /network/i,
   /timed? ?out/i,
   /disconnected/i,
+  /no connection with that id/i,
+  /unable to connect to the server/i,
 ];
 
 /**
@@ -94,6 +96,10 @@ export function rgsErrorFrom(err: unknown, method?: string): RgsError {
   // gateway or an outage, not "invalid bet" or "insufficient funds".
   if (Number.isFinite(status)) {
     if (status === 401 || status === 403 || status === RGS_ERRORS.SESSION_UNUSABLE) return new RgsError(RGS_ERRORS.SESSION_UNUSABLE, message, method);
+    // "No Connection with that ID: Status code '404'": the server this request reached does not
+    // hold the connection (another server negotiated it, or it is gone). A transport failure,
+    // never a 500 — unless the same text carries the hub's session-over code (read below).
+    if (status === 404 && !/error\s+code\D{0,10}?50[17]\b/i.test(message)) return new RgsError(undefined, message, method);
     if (status === RGS_ERRORS.SESSION_STOPPED) return new RgsError(RGS_ERRORS.SESSION_STOPPED, message, method);
     if (status === RGS_ERRORS.RATE_LIMITED) return new RgsError(RGS_ERRORS.RATE_LIMITED, message, method);
     if (status >= 500) return new RgsError(RGS_ERRORS.TECHNICAL, message, method);

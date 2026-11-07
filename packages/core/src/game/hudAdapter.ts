@@ -8,6 +8,9 @@ export function domHudPort(hud: DomHud, currency: () => CurrencySpec): HudPort {
   const ui = hud.ui;
   /** The notice currently awaited — a newer notice replacing it settles it as dismissed. */
   let pending: ((i: number) => void) | null = null;
+  /** The dialog's shell outlives each notice the binding paints into it: a busy notice marks
+   *  it (`is-busy`, the skin's spinner) and takes the mark off when it goes. */
+  const dialogHost = (): HTMLElement | null => hud.root.querySelector<HTMLElement>('#DialogWindow');
 
   const notice = (req: NoticeRequest): Promise<number> =>
     new Promise<number>((resolve) => {
@@ -17,6 +20,7 @@ export function domHudPort(hud: DomHud, currency: () => CurrencySpec): HudPort {
         if (done) return;
         done = true;
         off();
+        if (req.busy) dialogHost()?.classList.remove('is-busy');
         if (pending === finish) pending = null;
         resolve(i);
       };
@@ -25,7 +29,7 @@ export function domHudPort(hud: DomHud, currency: () => CurrencySpec): HudPort {
         ...(req.title ? [{ kind: 'heading' as const, id: 'notice-title', text: req.title }] : []),
         { kind: 'text', id: 'notice-body', text: req.message },
       ];
-      const labels = req.actions ?? [{ label: 'OK', primary: true }];
+      const labels = req.actions ?? (req.busy ? [] : [{ label: 'OK', primary: true }]);
       const actions: NoticeAction[] = labels.map((a, i) => ({
         label: a.label,
         variant: a.primary || (i === 0 && labels.length === 1) ? 'primary' : 'secondary',
@@ -34,7 +38,8 @@ export function domHudPort(hud: DomHud, currency: () => CurrencySpec): HudPort {
       // The binding closes the dialog BEFORE it runs the button's handler, so the "dismissed"
       // event fires first — defer it a microtask so a pressed button wins over a plain dismiss.
       const off = ui.bus.on('noticeDismissed', () => queueMicrotask(() => finish(-1)));
-      ui.showNotice(blocks, actions, { blocking: !!req.blocking });
+      ui.showNotice(blocks, actions, { blocking: !!req.blocking || !!req.busy });
+      dialogHost()?.classList.toggle('is-busy', !!req.busy);
     });
 
   return {

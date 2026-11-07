@@ -33,6 +33,7 @@ export function mockOptionsFromRuntime(runtime: RuntimeConfig): MockRgsOptions {
     ...(l.errors?.length ? { errors: l.errors } : {}),
     ...(l.force?.length ? { force: l.force } : {}),
     ...(l.gamification ? { gamificationToken: 'mock-gamification-token' } : {}),
+    ...(l.boot ? { boot: l.boot } : {}),
   };
 }
 

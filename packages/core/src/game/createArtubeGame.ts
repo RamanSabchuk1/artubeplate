@@ -27,7 +27,7 @@ import { RealTicker, type Ticker } from '../engine/ticker';
 import { TurboClock, type TurboState } from '../engine/turbo';
 import { FSM, type AudioPort, type Phase, type PhaseContext, type ViewHooks } from '../engine/fsm';
 import { defaultPhases, SettlePhase } from '../engine/phases';
-import { presentRgsError } from '../engine/errors';
+import { presentRgsError, SESSION_ENDED_MESSAGE as SESSION_ENDED } from '../engine/errors';
 import { roundMoney, type GameRound, type InterpretBook, type RoundInfo } from '../engine/round';
 import type { HudPort } from '../engine/hud-port';
 import { currencyFor } from '../currency';
@@ -41,7 +41,7 @@ import { buildSpec, buyCardsFor, baseModeOf } from './spec';
 import { frcChoice, frcNotice, rememberFrcChoice } from './frc';
 import { domHudPort, livesPips } from './hudAdapter';
 import { createArtubeLoader, type GameLoader } from './loader';
-import { showBootError } from './bootError';
+import { bootScreen } from './bootError';
 import { gamificationView, startGamification, type GamificationOptions, type GamificationView } from './gamification';
 import { autoplayLoop } from './autoplay';
 
@@ -161,6 +161,12 @@ function isAudioSpec(a: unknown): a is AudioSpec {
 
 const errText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
+/** The HUD's font family when the game's theme sets one (the boot screen wears it too). */
+function themeFont(config: GameConfig): string | undefined {
+  const family = (config.spec?.theme as { type?: { family?: unknown } } | undefined)?.type?.family;
+  return typeof family === 'string' && family ? family : undefined;
+}
+
 /** The bar's buttons are glyph-only — give each an accessible name. */
 const ARIA_LABELS: Record<string, string> = {
   PlaceBetBtn: 'Spin',
@@ -219,33 +225,52 @@ export function createArtubeGame<T = unknown, V = unknown, P = unknown>(opts: Cr
   let network: RgsTransport = opts.network ?? refusing(new Error('[artubeplate] the game has not started'), runtime.mock ? 'mock' : 'artube');
 
   // ── helpers ──────────────────────────────────────────────────────────────────
-  const fatal = (title: string, message: string, actions: Array<{ label: string; primary?: boolean }> = []): void => {
+  /** The end of this game's session on this page: a blocking notice with RELOAD (Artube QA: every
+   *  error dialog has one; on a session the platform ended, the reload says so again). */
+  const fatal = (title: string, message: string): void => {
     if (terminal) return;
     terminal = true;
     revealHud(); // a fatal notice must be seen even over an intro screen
     hud?.ui.autoplay.stop();
-    void port?.notice({ title, message, actions, blocking: true }).then((i) => {
-      if (actions[i]?.label === 'Reload') location.reload();
+    void port?.notice({ title, message, actions: [{ label: 'Reload', primary: true }], blocking: true }).then((i) => {
+      if (i === 0) location.reload();
     });
   };
 
   /**
-   * The connection is down: a blocking notice with RELOAD (the player can always start over),
-   * the way Artube's own reconnect shows it. It is not terminal: it goes away by itself when the
-   * connection comes back, and the game carries on from what `session` says.
+   * The connection is down, the way Artube's reconnect spec shows it: a blocking spinner while
+   * the automatic reconnect tries (`busy`), then, if that gave up, the popup with RELOAD (the
+   * player can always start over). Neither is terminal: it goes away by itself when the connection
+   * comes back, and the game carries on from what `session` says.
    */
   let connectionNoticeUp = false;
   let connectionNoticeToken = 0;
-  const showConnectionLost = (message: string): void => {
-    if (terminal || !port) return;
+  const showConnectionNotice = (req: { busy: true; message: string; keepAutoplay?: boolean } | { busy?: false; message: string }): number => {
+    if (terminal || !port) return -1;
     revealHud();
-    hud?.ui.autoplay.stop();
+    if (!(req.busy && req.keepAutoplay)) hud?.ui.autoplay.stop();
     const token = ++connectionNoticeToken;
     connectionNoticeUp = true;
-    void port.notice({ title: 'Connection lost', message, actions: [{ label: 'Reload', primary: true }], blocking: true }).then((i) => {
+    const shown = req.busy
+      ? port.notice({ message: req.message, busy: true, actions: [], blocking: true })
+      : port.notice({ title: 'Connection lost', message: req.message, actions: [{ label: 'Reload', primary: true }], blocking: true });
+    void shown.then((i) => {
       if (token === connectionNoticeToken) connectionNoticeUp = false;
-      if (i === 0) location.reload();
+      if (!req.busy && i === 0) location.reload();
     });
+    return token;
+  };
+  const showReconnecting = (): void => void showConnectionNotice({ busy: true, message: 'Reconnecting…' });
+  const showConnectionLost = (message: string): void => void showConnectionNotice({ message });
+  /**
+   * A spin the server has not answered for a while: a blocking spinner. It goes when the answer
+   * comes (the round plays on, an autoplay run with it); if the client gives up on the answer,
+   * "Reconnecting…" takes its place and `session` says what happened to the round.
+   */
+  let waitingToken = -1;
+  const showWaiting = (on: boolean): void => {
+    if (on) waitingToken = showConnectionNotice({ busy: true, message: 'Waiting for the server…', keepAutoplay: true });
+    else if (connectionNoticeUp && waitingToken === connectionNoticeToken) hideConnectionLost();
   };
   const hideConnectionLost = (): void => {
     if (!connectionNoticeUp) return;
@@ -580,7 +605,7 @@ export function createArtubeGame<T = unknown, V = unknown, P = unknown>(opts: Cr
         }
       }
       if (!s) {
-        if (!terminal) fatal('Connection lost', 'The game could not reach the server. Reload to continue — your balance is safe.', [{ label: 'Reload', primary: true }]);
+        if (!terminal) fatal('Connection lost', 'The game could not reach the server. Reload to continue — your balance is safe.');
         return;
       }
       hideConnectionLost();
@@ -636,6 +661,11 @@ export function createArtubeGame<T = unknown, V = unknown, P = unknown>(opts: Cr
     await resolveAudio();
     loader.setProgress(0.15);
 
+    // The first connection is tried again behind the loader (the transport's short backoff, no
+    // spinner over the loader); if the game cannot start, the boot's own screen says so in the
+    // HUD's dialog look, with RELOAD. A session the platform refuses is not retried: it says so at once.
+    const font = themeFont(opts.config);
+    const boot = bootScreen(document.body, font ? { font } : {});
     let session: SessionResponse;
     try {
       await network.connect();
@@ -646,20 +676,28 @@ export function createArtubeGame<T = unknown, V = unknown, P = unknown>(opts: Cr
       loader.remove();
       const err = e instanceof RgsError ? e : rgsErrorFrom(e);
       const noSession = !runtime.sessionId && network.kind === 'artube';
-      showBootError({
-        title: err.sessionOver ? 'Session ended' : network.kind === 'mock' ? 'Cannot load the math' : noSession ? 'No game session' : 'Cannot reach the game server',
-        message: err.sessionOver
-          ? 'This game session is no longer valid: the game was opened in another window or tab, or the session expired. Continue in the other window, or open the game again from the casino.'
-          : network.kind === 'mock'
-            ? 'The local mock RGS could not read the math folder. Run `npm run math:check`, and make sure the dev server serves math/ (the artubeplate Vite plugin).'
-            : noSession
-              ? 'Open the game from the casino, or from Artube Hub with PLAY or DEMO: the launch URL carries the session (?sessionId=…).'
-              : 'The game could not connect to the game server. Please reload to try again.',
-        // No session: nothing reached the RGS, so there is no errorId to quote.
-        detail: noSession ? errText(e) : `${err.errorId ? `errorId ${err.errorId}, ` : ''}${errText(e)}`,
-        // A reload cannot bring back a session the platform ended: no button that only fails again.
-        ...(noSession || err.sessionOver ? { reload: false } : {}),
-      });
+      const mathFailed = network.kind === 'mock' && !err.sessionOver && !err.transport;
+      console.error('[artubeplate] the game could not start', e);
+      // The player sees what to do, never a code: the detail is for the developer cases only.
+      boot.error(
+        err.sessionOver
+          ? { title: 'Session ended', message: SESSION_ENDED }
+          : noSession
+            ? {
+                title: 'No game session',
+                message: 'Open the game from the casino, or from Artube Hub with PLAY or DEMO: the launch URL carries the session (?sessionId=…).',
+                detail: errText(e),
+              }
+            : mathFailed
+              ? {
+                  title: 'Cannot load the math',
+                  message: 'The local mock RGS could not read the math folder. Run `npm run math:check`, and make sure the dev server serves math/ (the artubeplate Vite plugin).',
+                  detail: errText(e),
+                }
+              : err.transport
+                ? { title: 'No connection', message: 'The game could not connect to the game server. Check your connection and reload.' }
+                : { title: 'Something went wrong', message: 'The game could not start. Please reload.' },
+      );
       return;
     }
 
@@ -918,10 +956,13 @@ export function createArtubeGame<T = unknown, V = unknown, P = unknown>(opts: Cr
     // answers no key while a notice is up). Back: the notice goes by itself and `recover` reads
     // `session` — the balance, the round that was in flight, free rounds — and the game goes on.
     disposers.push(
+      network.on('waiting', ({ on }) => {
+        if (!terminal) showWaiting(on);
+      }),
       network.on('reconnecting', () => {
         if (terminal) return;
         hudObj.ui.autoplay.stop();
-        showConnectionLost('Reconnecting to the game server…');
+        showReconnecting();
       }),
       network.on('reconnected', () => {
         if (terminal) return;
@@ -936,13 +977,11 @@ export function createArtubeGame<T = unknown, V = unknown, P = unknown>(opts: Cr
           showConnectionLost('The game cannot reach the server. It keeps trying and carries on by itself when the connection is back — or reload now. Your balance is safe.');
           return;
         }
-        fatal('Connection lost', 'The connection to the game server was lost. Reload to continue — your balance is safe.', [{ label: 'Reload', primary: true }]);
+        fatal('Connection lost', 'The connection to the game server was lost. Reload to continue — your balance is safe.');
       }),
-      network.on('sessionClosed', () =>
-        fatal('Session ended', 'Your game session has ended. Open the game again from the casino to keep playing.'),
-      ),
+      network.on('sessionClosed', () => fatal('Session ended', SESSION_ENDED)),
       network.on('replaced', () =>
-        fatal('Opened elsewhere', 'This game was opened in another window, so this one has stopped. Continue playing there.'),
+        fatal('Opened elsewhere', 'This game was opened in another window, so this one has stopped. Continue there, or reload to play here.'),
       ),
       // A HINT (may arrive out of order): only applied when no round is in flight.
       network.on('balanceChanged', ({ balance }) => {

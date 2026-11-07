@@ -24,8 +24,19 @@ import {
   type SpinRequest,
 } from './protocol';
 import { currencyFor } from '../currency';
-import { RgsError, RGS_ERRORS } from './errors';
-import { RgsEmitter, sleep, type RgsEventName, type RgsEvents, type RgsTransport } from './network';
+import { RgsError, RGS_ERRORS, rgsErrorFrom } from './errors';
+import {
+  DEFAULT_ANSWER_TIMES,
+  RgsEmitter,
+  awaitAnswer,
+  sleep,
+  startWithRetries,
+  type AnswerTimes,
+  type RgsEventName,
+  type RgsEvents,
+  type RgsTransport,
+} from './network';
+import type { MockBoot } from './runtime';
 
 /** The math next to the page, so a demo build plays from any folder of any host. */
 function defaultMathUrl(): string {
@@ -59,7 +70,19 @@ export interface MockRgsOptions {
   errors?: number[];
   /** Force upcoming draws: `{ mode, row }` — the next spin of `mode` lands on that book row. */
   force?: Array<{ mode: string; row: number }>;
+  /**
+   * Script the first connection, with the real client's retries and `connecting` events:
+   * `session-over` — the hub refuses the session (its 501 close); `offline` — the server is
+   * never reached; `flaky` — it connects on the third attempt.
+   */
+  boot?: MockBoot;
+  /** How long the client waits on a late spin (`simulateNoAnswer`, `simulateSlowAnswer`). */
+  answer?: Partial<AnswerTimes>;
 }
+
+/** How the hub turns a session away (DEV, a session opened again elsewhere or expired). */
+const SESSION_REFUSED =
+  'Server returned an error on close: Connection closed with an error. HubException: Operation failed with error code 501. Error message: The session is invalid or cannot be retrieved';
 
 const DEFAULT_BETS = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100];
 
@@ -70,7 +93,7 @@ export interface OutageOptions {
   /** For a spin caught in it: `'answer'` (default) — the round was played and only the
    *  answer was lost; `'request'` — the spin never reached the server. */
   lost?: 'answer' | 'request';
-  /** When the automatic reconnect gives up (`closed`, still retrying). Default 18 000 ms,
+  /** When the automatic reconnect gives up (`closed`, still retrying). Default 7 500 ms,
    *  about as long as the real client's five attempts take. */
   giveUpAfter?: number;
 }
@@ -99,6 +122,8 @@ export class MockRgs implements RgsTransport {
   private offline = false;
   /** An outage waiting for the next spin to start (`simulateOutage({ at: 'next-spin' })`). */
   private outageArmed: Required<OutageOptions> & { ms: number } | null = null;
+  /** The next spin's answer is late or never comes (`simulateNoAnswer`, `simulateSlowAnswer`). */
+  private answerArmed: { kind: 'none' | 'slow'; played: boolean; ms: number; times: AnswerTimes } | null = null;
   private readonly errorQueue: number[];
   private readonly forceQueue: Array<{ mode: string; row: number }>;
 
@@ -158,6 +183,18 @@ export class MockRgs implements RgsTransport {
 
   async connect(): Promise<void> {
     await this.artifact(); // surface a broken/missing math folder at boot, like a failed connect
+    const boot = this.opts.boot;
+    if (!boot) return;
+    let tries = 0;
+    await startWithRetries(
+      async () => {
+        tries++;
+        await sleep(this.opts.latency ?? 120);
+        if (boot === 'session-over') throw rgsErrorFrom(new Error(SESSION_REFUSED), 'connect');
+        if (boot === 'offline' || (boot === 'flaky' && tries < 3)) throw new RgsError(undefined, 'WebSocket failed to connect.', 'connect');
+      },
+      { attempts: 5, emit: this.events, final: (e) => rgsErrorFrom(e, 'connect').sessionOver },
+    );
   }
 
   async session<P = unknown>(): Promise<SessionResponse<P>> {
@@ -224,7 +261,11 @@ export class MockRgs implements RgsTransport {
     // An outage armed for this spin: the connection drops while it is out.
     const outage = this.outageArmed;
     this.outageArmed = null;
+    const late = this.answerArmed;
+    this.answerArmed = null;
     try {
+      // No answer, and nothing played: the request never got anywhere that answers.
+      if (late && !late.played) await this.answerLate<never>(late);
       if (outage?.lost === 'request') {
         await sleep(this.opts.latency ?? 120);
         this.goDown(outage.ms, outage.giveUpAfter);
@@ -288,6 +329,8 @@ export class MockRgs implements RgsTransport {
         maxWinReached: totalWin < rawWin,
       };
       this.lastRound = round as RoundResponse;
+      // Played and paid on the server, and the answer is late or never comes.
+      if (late) return await this.answerLate(late, round);
       if (outage) {
         // Played and paid on the server; the answer never makes it back.
         this.goDown(outage.ms, outage.giveUpAfter);
@@ -297,6 +340,24 @@ export class MockRgs implements RgsTransport {
     } finally {
       this.busy = false;
     }
+  }
+
+  /** A spin's answer that is late (`slow`) or never comes, waited on as the real client waits. */
+  private answerLate<T>(late: NonNullable<MockRgs['answerArmed']>, value?: T): Promise<T> {
+    const answer = late.kind === 'slow' ? sleep(late.ms).then(() => value as T) : new Promise<T>(() => {});
+    return awaitAnswer(answer, { method: 'spin', emit: this.events, times: late.times, slow: true, onTimeout: () => this.reconnectAfterSilence() });
+  }
+
+  /** The client gave up on an answer and makes the connection again, as the real one does. */
+  private reconnectAfterSilence(): void {
+    this.offline = true;
+    this.events.emit('reconnecting', { error: new Error('mock: the game server did not answer') });
+    setTimeout(() => {
+      if (this.closed) return;
+      this.offline = false;
+      this.campaignActivated = false; // per connection, as on the real RGS
+      this.events.emit('reconnected', undefined);
+    }, (this.opts.latency ?? 120) + 400);
   }
 
   private pickRow(mode: LoadedMode): number {
@@ -319,6 +380,30 @@ export class MockRgs implements RgsTransport {
     return this;
   }
   /** The next spin fails with `errorId`. */
+  /**
+   * The next spin gets no answer: the hub keeps the connection and never answers. `played` (default
+   * true): the round was played and paid on the server; false: it never was. The game shows its
+   * spinner after `slowMs` (default 5 s) and gives up after `timeoutMs` (default 20 s): the
+   * connection is made again and `session` says what happened.
+   */
+  simulateNoAnswer(opts: { played?: boolean } & Partial<AnswerTimes> = {}): this {
+    this.answerArmed = { kind: 'none', played: opts.played ?? true, ms: 0, times: this.answerTimes(opts) };
+    return this;
+  }
+
+  /** The next spin's answer takes `ms` (the game's spinner shows after `slowMs`, default 5 s). */
+  simulateSlowAnswer(ms: number, opts: Partial<AnswerTimes> = {}): this {
+    this.answerArmed = { kind: 'slow', played: true, ms, times: this.answerTimes(opts) };
+    return this;
+  }
+
+  private answerTimes(o: Partial<AnswerTimes>): AnswerTimes {
+    return {
+      slowMs: o.slowMs ?? this.opts.answer?.slowMs ?? DEFAULT_ANSWER_TIMES.slowMs,
+      timeoutMs: o.timeoutMs ?? this.opts.answer?.timeoutMs ?? DEFAULT_ANSWER_TIMES.timeoutMs,
+    };
+  }
+
   failNext(errorId: number): this {
     this.errorQueue.push(errorId);
     return this;
@@ -341,7 +426,7 @@ export class MockRgs implements RgsTransport {
    * free-rounds activation is lost with the connection, as on the real RGS.
    */
   simulateOutage(ms = 8000, opts: OutageOptions = {}): this {
-    const outage = { ms, at: opts.at ?? 'next-spin', lost: opts.lost ?? 'answer', giveUpAfter: opts.giveUpAfter ?? 18_000 };
+    const outage = { ms, at: opts.at ?? 'next-spin', lost: opts.lost ?? 'answer', giveUpAfter: opts.giveUpAfter ?? 7_500 };
     if (outage.at === 'now') this.goDown(outage.ms, outage.giveUpAfter);
     else this.outageArmed = outage;
     return this;

@@ -14,6 +14,9 @@ export interface ErrorPolicy {
   refresh: boolean;
 }
 
+/** What every "session ended" notice says, at boot and in play: the dialog's button is RELOAD. */
+export const SESSION_ENDED_MESSAGE = 'Your game session has ended. Reload the game or open it again from the casino to keep playing.';
+
 export function describeRgsError(err: RgsError): ErrorPolicy {
   const code = err.errorId;
   switch (code) {
@@ -24,7 +27,7 @@ export function describeRgsError(err: RgsError): ErrorPolicy {
       return {
         kind: 'fatal',
         title: 'Session ended',
-        message: 'Your game session has ended. Close the game and open it again from the casino to keep playing.',
+        message: SESSION_ENDED_MESSAGE,
         refresh: false,
       };
     case RGS_ERRORS.INVALID_GAME_SETTINGS:
@@ -59,12 +62,19 @@ export function describeRgsError(err: RgsError): ErrorPolicy {
   }
 }
 
-/** Show an RGS error on the HUD. Resolves when the player dismissed it (fatal: never). */
+/**
+ * Show an RGS error on the HUD. Resolves when the player dismissed it (fatal: never). A fatal one
+ * blocks the game with RELOAD, the one way on that a player has (Artube QA: every error dialog
+ * gets a reload button).
+ */
 export async function presentRgsError(hud: HudPort, err: RgsError): Promise<ErrorPolicy> {
   const p = describeRgsError(err);
   if (typeof console !== 'undefined') console.warn(`[artubeplate] rgs error ${err.errorId ?? 'transport'} on ${err.method ?? '?'}: ${err.message}`);
   if (p.kind === 'funds') hud.showRgsError('ERR_IPB');
-  else if (p.kind === 'fatal') void hud.notice({ title: p.title, message: p.message, blocking: true, actions: [] });
+  else if (p.kind === 'fatal')
+    void hud.notice({ title: p.title, message: p.message, blocking: true, actions: [{ label: 'Reload', primary: true }] }).then((i) => {
+      if (i === 0 && typeof location !== 'undefined') location.reload();
+    });
   else if (p.kind === 'notice') await hud.notice({ title: p.title, message: p.message });
   return p;
 }
