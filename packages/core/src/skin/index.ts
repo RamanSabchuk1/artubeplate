@@ -939,7 +939,9 @@ ${ROOT}[data-channel="mobile"]:has(#FeatureBuyWindow.is-visible) .DataPanel__con
   ${ROOT}[data-channel="mobile"] .FeatureBuyConfirmBox { margin-top: 8px; }
   ${ROOT}[data-channel="mobile"] .FeatureBuyConfirmBox__inner { padding: 12px 16px 0; }
   ${ROOT}[data-channel="mobile"] .FeatureBuyConfirmBox__title { margin-bottom: 10px; }
-  ${ROOT}[data-channel="mobile"] .FeatureBuyConfirmBox__image { height: clamp(64px, 20vh, 150px); }
+  /* svh, the window with Safari's toolbars showing (vh would be the screen without them); vh stays
+     for a browser without it */
+  ${ROOT}[data-channel="mobile"] .FeatureBuyConfirmBox__image { height: clamp(64px, 20vh, 150px); height: clamp(64px, 20svh, 150px); }
   ${ROOT}[data-channel="mobile"] .FeatureBuyConfirmBox__content-wrapper { margin-top: 8px; padding-bottom: 4px; }
   ${ROOT}[data-channel="mobile"] .FeatureBuyConfirmAmount__value { font-size: 20px; line-height: 24px; }
   ${ROOT}[data-channel="mobile"] .FeatureBuyConfirmAmount__label { font-size: 14px; line-height: 17.5px; }
@@ -951,7 +953,7 @@ ${ROOT}[data-channel="mobile"]:has(#FeatureBuyWindow.is-visible) .DataPanel__con
   ${ROOT}[data-channel="mobile"] .FeatureBuyGridCard { margin-bottom: 8px; }
   ${ROOT}[data-channel="mobile"] .FeatureBuyGridCard__inner { padding: 12px 0 50px; }
   ${ROOT}[data-channel="mobile"] .FeatureBuyGridCard__content { gap: 6px; }
-  ${ROOT}[data-channel="mobile"] .FeatureBuyGridCard__img-wrapper, ${ROOT}[data-channel="mobile"] .FeatureBuyGridCard__image { width: clamp(72px, 24vh, 128px); height: clamp(72px, 24vh, 128px); }
+  ${ROOT}[data-channel="mobile"] .FeatureBuyGridCard__img-wrapper, ${ROOT}[data-channel="mobile"] .FeatureBuyGridCard__image { width: clamp(72px, 24vh, 128px); height: clamp(72px, 24vh, 128px); width: clamp(72px, 24svh, 128px); height: clamp(72px, 24svh, 128px); }
   ${ROOT}[data-channel="mobile"] .FeatureBuyGridCard__img-wrapper { margin: 4px auto; }
   ${ROOT}[data-channel="mobile"] .FeatureBuyGridCard__button { height: 46px; font-size: 22px; }
 }
@@ -1040,9 +1042,18 @@ ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard
 ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__content { gap: 4px; padding: 0 8px 2px; }
 ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__title { font-size: 15px; line-height: 17px; }
 ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__description { font-size: 12px; line-height: 15px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
-${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__img-wrapper,
-${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__image { width: clamp(40px, 16vh, 72px); height: clamp(40px, 16vh, 72px); }
-${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__img-wrapper { margin: 2px auto; }
+/* The row is as tall as the sheet's room and no taller, at every height: the picture is the part
+   that gives way, taking what the name, the words, the volatility, the price and the button leave
+   (up to 128px, as upright). It is sized from the room, never from vh: Safari's vh is the screen with its
+   toolbars hidden, so on an iPhone held sideways a vh-sized picture outgrew the room, and with the
+   home indicator's inset off the room too, the cards lost their names (QA, BONUS BUY). */
+${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyItemList { height: 100%; }
+${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyItem, ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard, ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__inner, ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__content { min-height: 0; }
+${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__description { flex: none; }
+/* the picture fills its box from outside the flow, so it never pushes the words or overlaps them */
+${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__img-container { position: relative; display: block; flex: 1 1 0; min-height: 0; align-self: stretch; }
+${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__img-wrapper { position: absolute; inset: 0; width: auto; height: auto; margin: 0; display: flex; align-items: center; justify-content: center; }
+${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__image { width: auto; height: auto; max-width: 100%; max-height: min(100%, 128px); object-fit: contain; }
 ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__description--value { font-size: 18px; line-height: 22px; }
 ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__button { height: 40px; font-size: 18px; }
 /* GAME INFO / HISTORY sit over the whole HUD on a phone (the library lifts them), so their column
@@ -1080,24 +1091,21 @@ ${ROOT}[data-channel="mobile"][data-orientation="landscape"] #GameInfoWindow .Mo
   /* the ☰ menu's tiles scroll in the room above its ✕ instead of running down under it */
   ${ROOT}[data-channel="mobile"][data-orientation="landscape"] #MainMenu ul { max-height: 100%; overflow-y: auto; overscroll-behavior: contain; }
 }
-/* BONUS BUY on a short screen held sideways: the cards fit the room above the strip, so the first
-   card's price and its button are always in view (at 292px and up they keep the look above). The
-   row is as tall as the sheet's room and no taller; the picture is the part that gives way, taking
-   what the words, the volatility and the price leave (up to 56px), and the button is 36px. Under
-   260px the picture goes, under 230px the words keep one line, under 210px the volatility goes,
-   and under 193px the words. */
+/* BONUS BUY on a short screen held sideways: tighter still, so the first card's price and its
+   button stay in view. The words keep two lines, the picture takes up to 56px, the button is 36px.
+   Under 260px the picture goes, under 230px the words keep one line, under 210px the volatility
+   goes, and under 193px the words. */
 @media (max-height: 291px) {
-  ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyItemList { height: 100%; }
-  ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyItem, ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard, ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__inner, ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__content { min-height: 0; }
   ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__inner { padding-bottom: 38px; }
-  ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__description { flex: none; -webkit-line-clamp: 2; }
-  ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__img-container { display: flex; flex: 1 1 0; min-height: 0; align-items: center; justify-content: center; }
-  ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__img-wrapper,
-  ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__image { width: auto; height: 100%; max-height: 56px; object-fit: contain; }
-  ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__img-wrapper { margin: 0 auto; }
+  ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__description { -webkit-line-clamp: 2; }
+  ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__image { max-height: min(100%, 56px); }
   ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__button { height: 36px; font-size: 16px; }
 }
 @media (max-height: 259px) { ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__img-container { display: none; } }
+/* the confirm step on a short screen held sideways: its picture gives way first (40px under 290px,
+   none under 270px), so the BUY button stays above the strip (it ran 7-15px under it) */
+@media (max-height: 289px) { ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyConfirmBox__image { height: 40px; } }
+@media (max-height: 269px) { ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyConfirmBox__image { display: none; } }
 @media (max-height: 229px) { ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__description { -webkit-line-clamp: 1; } }
 @media (max-height: 209px) { ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__description--volatility { display: none; } }
 @media (max-height: 192px) { ${ROOT}[data-channel="mobile"][data-orientation="landscape"] .FeatureBuyGridCard__description { display: none; } }

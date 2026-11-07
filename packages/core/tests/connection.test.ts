@@ -62,6 +62,11 @@ function scriptedConnection() {
       this.state = 'Disconnected';
       onclose?.();
     },
+    /** The hub closes the connection with an error. */
+    close(error: Error) {
+      this.state = 'Disconnected';
+      onclose?.(error);
+    },
     /** The automatic reconnect made it. */
     back() {
       this.state = 'Connected';
@@ -241,6 +246,65 @@ describe('a session the platform no longer accepts (QA: "after opening a second 
     expect(rgsErrorFrom(Object.assign(new Error("Bad gateway: Status code '502'"), { statusCode: 502 })).errorId).toBe(RGS_ERRORS.TECHNICAL);
     expect(rgsErrorFrom(Object.assign(new Error("Service unavailable: Status code '503'"), { statusCode: 503 })).errorId).toBe(RGS_ERRORS.TECHNICAL);
     expect(rgsErrorFrom(Object.assign(new Error("Service unavailable: Status code '520'"), { statusCode: 520 })).errorId).toBe(RGS_ERRORS.TECHNICAL);
+  });
+
+  // QA round three: the hub let the connection in and then closed it with the code inside.
+  const closedWith = (code: number): Error =>
+    new Error(`Server returned an error on close: Connection closed with an error. HubException: Operation failed with error code ${code}. Error message: The session is invalid or cannot be retrieved`);
+
+  it('a hub that closes the connection with "error code 501" ends the session, it is not a lost connection', async () => {
+    const { rgsErrorFrom, RGS_ERRORS } = await import('../src/rgs/errors');
+    expect(rgsErrorFrom(closedWith(501), 'connect')).toMatchObject({ errorId: RGS_ERRORS.SESSION_UNUSABLE, sessionOver: true, transport: false });
+    expect(rgsErrorFrom(closedWith(507), 'connect')).toMatchObject({ errorId: RGS_ERRORS.SESSION_STOPPED, sessionOver: true });
+    expect(rgsErrorFrom(closedWith(500), 'connect')).toMatchObject({ errorId: RGS_ERRORS.TECHNICAL, sessionOver: false });
+    // a close without a code is still a dropped connection
+    expect(rgsErrorFrom(new Error('Server returned an error on close: Connection closed with an error.'), 'connect').transport).toBe(true);
+  });
+
+  it('boot: one refused start is enough, and it says the session ended', async () => {
+    const conn = scriptedConnection();
+    conn.start = async function () {
+      this.starts++;
+      throw closedWith(501);
+    };
+    const c = new ArtubeRgsClient({ url: 'x', connectionFactory: () => conn, startAttempts: 3 });
+    await expect(c.connect()).rejects.toMatchObject({ sessionOver: true });
+    expect(conn.starts).toBe(1);
+  });
+
+  it('in play: a close with the session-over code is final, never a reconnect loop', async () => {
+    vi.useFakeTimers();
+    const conn = scriptedConnection();
+    const c = new ArtubeRgsClient({ url: 'x', connectionFactory: () => conn, reviveDelays: [1000] });
+    const seen: string[] = [];
+    c.on('closed', () => seen.push('closed'));
+    c.on('sessionClosed', () => seen.push('sessionClosed'));
+    await c.connect();
+    conn.close(closedWith(501));
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(seen).toEqual(['sessionClosed']);
+    expect(conn.starts).toBe(1);
+    expect(c.connected).toBe(false);
+  });
+
+  it('a reconnect the hub refuses with the code ends the session too', async () => {
+    vi.useFakeTimers();
+    const conn = scriptedConnection();
+    const c = new ArtubeRgsClient({ url: 'x', connectionFactory: () => conn, reviveDelays: [1000] });
+    const seen: string[] = [];
+    c.on('closed', (p) => seen.push(`closed${p.retrying ? ':retrying' : ''}`));
+    c.on('sessionClosed', () => seen.push('sessionClosed'));
+    await c.connect();
+    conn.drop();
+    conn.start = async function () {
+      this.starts++;
+      throw closedWith(501);
+    };
+    conn.giveUp();
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(seen).toEqual(['closed:retrying', 'sessionClosed']);
+    expect(conn.starts).toBe(2); // the first connect + one refused revive
   });
 });
 

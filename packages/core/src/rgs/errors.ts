@@ -108,7 +108,15 @@ export function rgsErrorFrom(err: unknown, method?: string): RgsError {
       /* not JSON */
     }
   }
-  const tagged = message.match(/error\s*_?id["'\s:=]*(\d{3})/i) ?? message.match(/\[(\d{3})\]/) ?? message.match(/(?:HubException:\s*|^)(\d{3})\b/);
+  // The hub's own wording when it ends a connection: "HubException: Operation failed with error
+  // code 501. Error message: The session is invalid or cannot be retrieved". It comes inside
+  // "Server returned an error on close: Connection closed with an error. …", so it must be read
+  // before the text is taken for a dropped connection.
+  const tagged =
+    message.match(/error\s*_?id["'\s:=]*(\d{3})/i) ??
+    message.match(/error\s+code\D{0,10}?(\d{3})\b/i) ??
+    message.match(/\[(\d{3})\]/) ??
+    message.match(/(?:HubException:\s*|^)(\d{3})\b/);
   if (tagged) {
     const code = Number(tagged[1]);
     if (KNOWN.has(code)) return new RgsError(code, message, method);

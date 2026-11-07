@@ -44,7 +44,8 @@ export interface HudPort {
   /** Show a notice; resolves with the index of the pressed action (−1 if dismissed). */
   notice(req: NoticeRequest): Promise<number>;
   hideNotice(): void;
-  /** Format money in the session currency. */
+  /** Format money in the session currency, at its minimal unit, rounded down: a win on the canvas
+   *  never reads more than it is (1986.5 KRW reads ₩1,986). */
   format(major: number): string;
   lock(): void;
   unlock(): void;

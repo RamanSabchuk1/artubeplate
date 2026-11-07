@@ -115,11 +115,22 @@ export class ArtubeRgsClient implements RgsTransport {
     this.conn.onreconnecting((error) => this.events.emit('reconnecting', { ...(error ? { error } : {}) }));
     this.conn.onreconnected(() => this.events.emit('reconnected', undefined));
     this.conn.onclose((error) => {
+      // The hub closed the connection because the session is over (the game was opened again in
+      // another tab, the session expired: "…error code 501…"). That is final, as the session-closed
+      // notification is: no reconnecting to a session that cannot come back.
+      if (!this.dead && error && rgsErrorFrom(error, 'connection').sessionOver) return this.sessionOver();
       // Stopped on purpose (disposed, replaced, the session closed): that is final.
       const retrying = !this.dead && (this.opts.reviveDelays ?? DEFAULT_REVIVE).length > 0;
       this.events.emit('closed', { ...(error ? { error } : {}), ...(retrying ? { retrying: true } : {}) });
       if (retrying) void this.revive();
     });
+  }
+
+  /** The platform will not take this session again: stop, and say so once. */
+  private sessionOver(): void {
+    if (this.dead) return;
+    this.dead = true;
+    this.events.emit('sessionClosed', undefined);
   }
 
   /** Whether a call can go out right now. */
@@ -155,7 +166,9 @@ export class ArtubeRgsClient implements RgsTransport {
           if (this.dead) return;
           this.events.emit('reconnected', undefined);
           return;
-        } catch {
+        } catch (e) {
+          // The hub answers, and the session is gone: nothing to wait for.
+          if (rgsErrorFrom(e, 'connect').sessionOver) return this.sessionOver();
           // Still down: the next wait.
         }
       }
@@ -178,6 +191,8 @@ export class ArtubeRgsClient implements RgsTransport {
         return;
       } catch (e) {
         last = e;
+        // A session the platform refuses is refused again on every attempt.
+        if (rgsErrorFrom(e, 'connect').sessionOver) break;
         if (i < attempts - 1) await sleep(500 * 2 ** i);
       }
     }

@@ -55,7 +55,9 @@ export function domHudPort(hud: DomHud, currency: () => CurrencySpec): HudPort {
       pending?.(-1);
       ui.hideNotice();
     },
-    format: (n) => formatAmount(n, currency()),
+    // A win on the canvas reads like the bar: at the currency's minimal unit, rounded down, never
+    // more than it is (Artube's checklist, "Balance and win").
+    format: (n) => formatAmount(n, currency(), { round: 'down' }),
     lock: () => ui.lock(),
     unlock: () => ui.unlock(),
   };

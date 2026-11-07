@@ -689,6 +689,10 @@ export function createArtubeGame<T = unknown, V = unknown, P = unknown>(opts: Cr
     hideHud();
     // A page still titled with a scaffold placeholder takes the game's name.
     if (!document.title || document.title.includes('{{')) document.title = config.title;
+    // BALANCE, WIN and TOTAL WIN at the currency's minimal unit, rounded down (Artube's checklist:
+    // never more than the player has; 1449.987 KRW reads 1,449). open-slot-ui would otherwise show
+    // a sub-unit amount in full ("1,449.987"), as Stake asks.
+    for (const v of [hudObj.ui.balance, hudObj.ui.win, hudObj.ui.totalWin]) v.autoPrecision = false;
     hudObj.setCurrency(currency);
     hudObj.setBalance(session.balance);
     if (config.maxWinX) hudObj.setMaxWin(config.maxWinX);

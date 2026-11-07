@@ -32,7 +32,7 @@ export function rulesKit(session: SessionResponse): RulesKit {
   const currency = currencyFor(ss.currency, ss.currencyMinimalUnit);
   return {
     bet,
-    money: (x) => formatAmount(x * bet, currency),
+    money: (x) => formatAmount(x * bet, currency, { round: 'down' }),
     price: (id) => timesText(session.gameSettings.gameModes.find((m) => m.id === id)?.priceMultiplier ?? 1),
   };
 }
