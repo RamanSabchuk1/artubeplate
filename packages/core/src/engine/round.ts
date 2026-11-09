@@ -41,8 +41,21 @@ export interface GameRound<T = unknown, P = unknown> extends RoundInfo {
 /** The game's one seam into a round: the book payload (typed `P`) → its own model. Pure. */
 export type InterpretBook<T, P = unknown> = (payload: P, info: RoundInfo) => T;
 
-/** Round money to the currency's minimal unit (float-noise safe). */
+/**
+ * Round money to the currency's minimal unit, to the NEAREST unit (float-noise safe). Never for an
+ * amount the player sees: a wallet can hold more decimals than its currency shows (Artube: 99,998.6455
+ * KWD), and rounding to nearest shows more than the player has. The core keeps money exact
+ * ({@link exactMoney}) and the HUD rounds it down where it is shown.
+ */
 export function roundMoney(x: number, unit = 0.01): number {
   const decimals = Math.max(0, Math.round(-Math.log10(unit)));
   return Number((Math.round(x / unit) * unit).toFixed(decimals));
+}
+
+/**
+ * Money as it is, without the binary noise of float arithmetic (0.1 + 0.2 is 0.3): 15 significant
+ * digits, no rounding to the currency's unit. What the HUD shows of it is rounded down there.
+ */
+export function exactMoney(x: number): number {
+  return Number.isFinite(x) ? Number(x.toPrecision(15)) : 0;
 }

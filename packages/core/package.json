@@ -1,6 +1,6 @@
 {
   "name": "@artubeplate/core",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Batteries-included Artube RGS game core — SignalR transport, an artifact-backed mock RGS, round FSM, the open-slot-ui HUD, free rounds, reconnects, errors and math tooling. Bring a scene, a Present phase and a pure interpretBook; the core does the rest.",
   "keywords": [
     "artube",

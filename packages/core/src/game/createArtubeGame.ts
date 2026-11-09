@@ -28,7 +28,7 @@ import { TurboClock, type TurboState } from '../engine/turbo';
 import { FSM, type AudioPort, type Phase, type PhaseContext, type ViewHooks } from '../engine/fsm';
 import { defaultPhases, SettlePhase } from '../engine/phases';
 import { presentRgsError, SESSION_ENDED_MESSAGE as SESSION_ENDED } from '../engine/errors';
-import { roundMoney, type GameRound, type InterpretBook, type RoundInfo } from '../engine/round';
+import { exactMoney, type GameRound, type InterpretBook, type RoundInfo } from '../engine/round';
 import type { HudPort } from '../engine/hud-port';
 import { currencyFor } from '../currency';
 import { artubeplateSkinCss } from '../skin';
@@ -374,7 +374,7 @@ export function createArtubeGame<T = unknown, V = unknown, P = unknown>(opts: Cr
     }
     const ante = stores.ui.activeMode.get();
     const mult = ante ? (stores.session.mode(ante)?.priceMultiplier ?? 1) : 1;
-    hud.ui.bet.set(roundMoney(stores.balance.bet.get() * mult, stores.session.current.get()?.sessionSettings.currencyMinimalUnit ?? 0.01));
+    hud.ui.bet.set(exactMoney(stores.balance.bet.get() * mult));
     hud.ui.bet.setEmphasis(mult !== 1);
   };
 

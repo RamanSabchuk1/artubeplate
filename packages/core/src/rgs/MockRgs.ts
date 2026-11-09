@@ -158,6 +158,15 @@ export class MockRgs implements RgsTransport {
     return Number((Math.round(x / this.unit) * this.unit).toFixed(decimals));
   }
 
+  /**
+   * A balance as the platform keeps it: down to the currency's unit (DEV, USD: 99,881.29 − 0.10 +
+   * a 0.118 win came back as 99,881.30, not .31). Float-noise safe: 998.9999999 is 999.
+   */
+  private balanceAfter(x: number): number {
+    const decimals = Math.max(0, Math.round(-Math.log10(this.unit)));
+    return Number((Math.floor(Number((x / this.unit).toPrecision(14))) * this.unit).toFixed(decimals));
+  }
+
   private async artifact(): Promise<LoadedArtifact> {
     if (this.art) return this.art;
     const m = this.opts.math ?? defaultMathUrl();
@@ -298,7 +307,8 @@ export class MockRgs implements RgsTransport {
         if (!Number.isInteger(req.betIndex) || req.betIndex < 0 || req.betIndex >= this.bets.length)
           throw new RgsError(RGS_ERRORS.INVALID_BET, `betIndex ${req.betIndex} is outside allowedBets`, 'spin');
         bet = this.bets[req.betIndex]!;
-        price = this.money(bet * info.priceMultiplier);
+        // The platform's price: allowedBets[betIndex] × priceMultiplier, exact.
+        price = Number((bet * info.priceMultiplier).toPrecision(15));
         if (this.balanceValue + 1e-9 < price) throw new RgsError(RGS_ERRORS.INSUFFICIENT_FUNDS, 'not enough funds', 'spin');
       }
 
@@ -307,7 +317,7 @@ export class MockRgs implements RgsTransport {
       const rawWin = this.money(bet * multiplierX);
       const cap = this.opts.platformMaxWin && this.opts.platformMaxWin > 0 ? this.opts.platformMaxWin : Infinity;
       const totalWin = Math.min(rawWin, cap);
-      this.balanceValue = this.money(this.balanceValue - price + totalWin);
+      this.balanceValue = this.balanceAfter(this.balanceValue - price + totalWin);
 
       let campaignState: FreeRoundCampaign | null = null;
       if (inCampaign && c) {

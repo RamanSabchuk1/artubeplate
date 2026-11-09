@@ -11,7 +11,7 @@
 
 import { rgsErrorFrom, RGS_ERRORS } from '../rgs/errors';
 import { presentRgsError } from './errors';
-import { roundMoney, type RoundInfo } from './round';
+import { exactMoney, type RoundInfo } from './round';
 import type { Phase, PhaseContext, ViewHooks } from './fsm';
 
 /** The wallet's balance, read now; `null` when it cannot be read (no connection, an error). */
@@ -53,8 +53,10 @@ export class SpinPhase<T = unknown, V = unknown, P = unknown> implements Phase<T
     }
     const bet = frc && campaign ? campaign.bet : stores.balance.bet.get();
     const betIndex = frc ? null : stores.balance.betIndex.get();
-    const unit = stores.session.current.get()?.sessionSettings.currencyMinimalUnit ?? 0.01;
-    const stake = frc ? 0 : roundMoney(bet * mode.priceMultiplier, unit);
+    // The price as the platform computes it: allowedBets[betIndex] × priceMultiplier, exact. Money in
+    // the stores stays exact; the HUD rounds it down where it is shown (a wallet may hold more
+    // decimals than its currency shows, and a round to nearest showed more than the player had).
+    const stake = frc ? 0 : exactMoney(bet * mode.priceMultiplier);
     let before = stores.balance.balance.get();
     // A cheap pre-check; the server's own 503 stays authoritative. The bar can be behind the wallet
     // (a deposit made in the lobby since the last read): read it before refusing the spin.
@@ -75,7 +77,8 @@ export class SpinPhase<T = unknown, V = unknown, P = unknown> implements Phase<T
     hud.setWin(0);
     hud.setHudState('play');
     hud.spinBusy();
-    if (stake > 0) stores.balance.balance.set(roundMoney(before - stake, unit));
+    // The bar drops by the stake at once, exactly: 99,998.6455 − 0.4 reads 99,998.245, never .246.
+    if (stake > 0) stores.balance.balance.set(exactMoney(before - stake));
     view?.onSpinStart?.();
 
     let res;
@@ -131,8 +134,11 @@ export class SpinPhase<T = unknown, V = unknown, P = unknown> implements Phase<T
     }
     ctx.round = { ...info, data, balance: res.balance, raw: res };
     if (res.freeRoundCampaign) stores.frc.campaign.set(res.freeRoundCampaign);
-    // The server balance already contains the win; hold it back until the win is presented.
-    stores.balance.balance.set(roundMoney(res.balance - res.totalWin, unit));
+    // The server balance already contains the win; until the win is presented the bar keeps the
+    // balance the player saw drop by the stake, never above the server's. Not `balance − totalWin`:
+    // the platform credits a win under the currency's unit rounded down (DEV, USD: a 0.012 win
+    // credits 0.01), so that dipped below the debited balance and the bar ticked down, then up.
+    stores.balance.balance.set(Math.min(stores.balance.balance.get(), res.balance));
     await ctx.fsm.transition(data === undefined ? 'settle' : 'present');
   }
 }
@@ -146,13 +152,12 @@ export class PresentPhase<T = unknown, V = unknown, P = unknown> implements Phas
 }
 
 /** What the next round costs the player, as the spin phase charges it: the bet times the price of
- *  the mode that is switched on (a boost), rounded to the currency's smallest unit, or nothing
+ *  the mode that is switched on (a boost), exact as the platform computes it, or nothing
  *  during operator free rounds. A bought feature is one round and never repeats. */
 export function nextRoundPrice(stores: PhaseContext['stores']): number {
   if (stores.frc.active) return 0;
   const mode = stores.session.mode(stores.ui.activeMode.get() ?? stores.ui.baseMode);
-  const unit = stores.session.current.get()?.sessionSettings.currencyMinimalUnit ?? 0.01;
-  return roundMoney(stores.balance.bet.get() * (mode?.priceMultiplier ?? 1), unit);
+  return exactMoney(stores.balance.bet.get() * (mode?.priceMultiplier ?? 1));
 }
 
 /** Land the authoritative balance + win, cap notice, history, then Idle. */

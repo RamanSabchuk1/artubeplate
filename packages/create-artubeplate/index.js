@@ -22,7 +22,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const templateDir = join(here, 'template');
 
 // The @artubeplate/core range the scaffold pins (the template dev-links `workspace:*`).
-const CORE_VERSION = '^1.2.2';
+const CORE_VERSION = '^1.2.3';
 
 const isText = (n) => /\.(ts|tsx|js|jsx|mjs|cjs|json|html?|css|md|txt|ya?ml|svg|env|example)$/i.test(n) || n === '_gitignore' || n === '.gitignore';
 
