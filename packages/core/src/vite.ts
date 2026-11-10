@@ -11,7 +11,7 @@
 // in a plain build — a deployed game without a session in its URL says so instead of looking for
 // math that is not there.
 //
-// With `ARTUBE_HOST=https://<host of an Artube launch URL>` the dev server also proxies `/api-rgs`
+// With `ARTUBE_HOST=https://<host of an Artube launch URL>` the dev server also proxies `/api/rgs`
 // (HTTP + WebSocket) to that environment, so a REAL session plays from localhost with no deploy:
 // open `http://localhost:8080/?sessionId=…&gameId=…` (both from the launch URL; Artube Hub's
 // Play on Localhost opens exactly that, so games serve dev on 8080).
@@ -41,7 +41,7 @@ export interface ArtubeplatePluginOptions {
   /** Copy the math into the build output too (a mock-only demo deploy). Default false. */
   demoBuild?: boolean;
   /**
-   * Proxy `/api-rgs` (the RGS hub, HTTP + WebSocket) to this Artube environment in `vite dev`:
+   * Proxy `/api/rgs` (the RGS hub, HTTP + WebSocket) to this Artube environment in `vite dev`:
    * the host of a launch URL the Artube team gave you. Default: `$ARTUBE_HOST`. Dev server only.
    */
   rgsHost?: string;
@@ -84,11 +84,11 @@ function serveFolder(prefix: string, dir: string, fallbackType = 'application/oc
   };
 }
 
-/** The dev-server proxy that sends `/api-rgs` to a real Artube environment. */
+/** The dev-server proxy that sends `/api/rgs` to a real Artube environment. */
 export function rgsProxy(host: string): Record<string, ProxyOptions> {
   const target = new URL(/^https?:\/\//.test(host) ? host : `https://${host}`).origin;
   return {
-    '/api-rgs': {
+    '/api/rgs': {
       target,
       changeOrigin: true,
       secure: true,
@@ -179,7 +179,7 @@ export function artubeplate(opts: ArtubeplatePluginOptions = {}): Plugin {
       }
       if (rgsHost) {
         const target = Object.values(rgsProxy(rgsHost))[0]!.target as string;
-        config.logger.info(`\n  [artubeplate] /api-rgs → ${target} (the REAL RGS). Open this page with ?sessionId=…&gameId=… from a launch URL.`);
+        config.logger.info(`\n  [artubeplate] /api/rgs → ${target} (the REAL RGS). Open this page with ?sessionId=…&gameId=… from a launch URL.`);
       }
       if (opts.validate !== false) {
         void validateDir(dir)

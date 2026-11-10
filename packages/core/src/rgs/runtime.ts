@@ -10,8 +10,8 @@
  *   lang        — `?lng=` (Artube's name for it; also `lang` / `language` / `locale`), falling
  *                 back to `en`
  *
- * The frontend and the RGS share one origin: the hub is `/api-rgs/api/slot` RELATIVE to the page
- * (the ingress strips `/api-rgs` and forwards to `/api/slot` — the doubled `/api` is correct).
+ * The frontend and the RGS share one origin: the hub is `/api/rgs/slot` RELATIVE to the page
+ * (the ingress rewrites `/api/rgs/` to `/api/` and forwards to `/api/slot`).
  *
  * No `sessionId` (a bare `pnpm dev`) or `?mock=true` → the in-process MOCK RGS, which plays the
  * game's own math folder — but only where the mock can work (see {@link MOCK_ALLOWED}): a build
@@ -19,7 +19,7 @@
  * Mock-only knobs ride on the URL too (see {@link MockLaunch}).
  */
 
-export const DEFAULT_RGS_PATH = '/api-rgs/api/slot';
+export const DEFAULT_RGS_PATH = '/api/rgs/slot';
 
 declare const __ARTUBEPLATE_MOCK__: boolean | undefined;
 

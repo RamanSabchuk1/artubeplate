@@ -69,12 +69,12 @@ describe('runtime', () => {
     const rt = readRuntime({ param: at('sessionId=abc-123&lang=pt-BR'), gameServerId: 'srv-9' });
     expect(isArtubeLaunch(rt)).toBe(true);
     expect(rt.language).toBe('pt');
-    expect(hubUrl(rt)).toBe('/api-rgs/api/slot?sessionId=abc-123&game=srv-9');
+    expect(hubUrl(rt)).toBe('/api/rgs/slot?sessionId=abc-123&game=srv-9');
   });
   it("an Artube launch URL: the hub's game is ?gameId= (Stage's own id included), the language ?lng=", () => {
     const rt = readRuntime({ param: at('sessionId=s-1&gameId=n4f-stage&lng=de'), gameServerId: 'fallback' });
     expect(rt.language).toBe('de');
-    expect(hubUrl(rt)).toBe('/api-rgs/api/slot?sessionId=s-1&game=n4f-stage');
+    expect(hubUrl(rt)).toBe('/api/rgs/slot?sessionId=s-1&game=n4f-stage');
   });
   it('no session (or ?mock=1) → the mock', () => {
     expect(readRuntime({ param: at('') }).mock).toBe(true);

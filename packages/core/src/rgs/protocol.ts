@@ -1,7 +1,7 @@
 /**
  * The Artube RGS client contract — the wire shapes of the SignalR hub a game talks to.
  *
- *   wss://<host>/api-rgs/api/slot?sessionId=<uuid>&game=<the launch URL's gameId>
+ *   wss://<host>/api/rgs/slot?sessionId=<uuid>&game=<the launch URL's gameId>
  *   methods:        session · spin { gameMode, betIndex } · balance · activateFreeRoundCampaign { campaignId }
  *   notifications:  NotifyBalanceChanged · NotifySessionClosed · NotifyNewConnectionHasOpened
  *
